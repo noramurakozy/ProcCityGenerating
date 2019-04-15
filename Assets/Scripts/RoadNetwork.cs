@@ -1,4 +1,5 @@
 ﻿
+using QuadTreeLib;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,6 +7,7 @@ using UnityEngine;
 
 public class RoadNetwork : MonoBehaviour
 {
+    private QuadTree<Road> qTree;
     private List<Road> primaryQueue;
     private List<Road> finalSegments;
     private double[,] heatMap;
@@ -28,8 +30,10 @@ public class RoadNetwork : MonoBehaviour
     private readonly int BRANCH_SEGMENT_LENGTH = 2;
     private readonly int HIGHWAY_RANDOM_ANGLE = 15;
     private readonly int DEFAULT_ROAD_RANDOM_ANGLE = 3;
-    private readonly float MAP_HEIGHT = 100;
-    private readonly float MAP_WIDTH = 100;
+    private readonly int MINIMUM_INTERSECTION_DEVIATION = 30;
+    private readonly int ROAD_SNAP_DISTANCE = 50;
+    private readonly float MAP_HEIGHT = 200;
+    private readonly float MAP_WIDTH = 200;
     private Rect bounds;
 
     int heatMapScale = 1;
@@ -37,6 +41,7 @@ public class RoadNetwork : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        qTree = new QuadTree<Road>(new System.Drawing.RectangleF(-5000, -5000, 10000, 10000));
         bounds = new Rect(0, 0, MAP_WIDTH, MAP_HEIGHT);
         GeneratePopulationHeatMap((int)MAP_WIDTH / heatMapScale, (int)MAP_HEIGHT / heatMapScale);
         primaryQueue = new List<Road>() {
@@ -57,7 +62,8 @@ public class RoadNetwork : MonoBehaviour
                 continue;
             }
 
-            finalSegments.Add(modified);
+            //finalSegments.Add(modified);
+            AddSegment(modified, finalSegments, qTree);
 
             foreach (Road road in GlobalGoals(modified))
             {
@@ -82,6 +88,10 @@ public class RoadNetwork : MonoBehaviour
             {
                 roadView.GetComponent<LineRenderer>().endColor = new Color(0, 0, 1);
                 roadView.GetComponent<LineRenderer>().startColor = new Color(0, 0, 1);
+            }else
+            {
+                roadView.GetComponent<LineRenderer>().endColor = roadView.road.color;
+                roadView.GetComponent<LineRenderer>().startColor = roadView.road.color;
             }
             roadView.Draw();
             //yield return new WaitForSeconds(0.2f);
@@ -94,9 +104,31 @@ public class RoadNetwork : MonoBehaviour
 
     private Road CheckLocalConstraints(Road r)
     {
-        foreach(Road segment in finalSegments)
+        foreach (var otherSegment in qTree.Query(r.Rectangle))
         {
-            if(lineSegmentsIntersect(r.Start, r.End, segment.Start, segment.End))
+            float t;
+            if (FindDistanceToSegment(r.End, otherSegment.Start, otherSegment.End, out t) < ROAD_SNAP_DISTANCE * ROAD_SNAP_DISTANCE
+                && t >= 0 && t <= (otherSegment.End - otherSegment.Start).magnitude)
+            {
+                if (MinDegreeDifference(r.DirectionAngle, otherSegment.DirectionAngle) < MINIMUM_INTERSECTION_DEVIATION)
+                {
+                    Debug.Log("qtree intersect " + MinDegreeDifference(r.DirectionAngle, otherSegment.DirectionAngle));
+                    r.color = Color.magenta;
+                    return null;
+                }
+                
+            }
+                //check intersections
+                
+            /*if (lineSegmentsIntersect(r.Start, r.End, otherSegment.Start, otherSegment.End))
+            {
+                Debug.Log("Intersect in the rect");
+                return null;
+            }*/
+        }
+        foreach (Road segment in finalSegments)
+        {
+            if (lineSegmentsIntersect(r.Start, r.End, segment.Start, segment.End))
             {
                 return null;
             }
@@ -153,7 +185,7 @@ public class RoadNetwork : MonoBehaviour
         }
         else if (straightPopulation > NORMAL_BRANCH_POPULATION_THRESHOLD)
         {
-            Debug.Log("straightpop: " + straightPopulation);
+            //Debug.Log("straightpop: " + straightPopulation);
             newRoads.Add(straightRoad);
         }
 
@@ -185,6 +217,18 @@ public class RoadNetwork : MonoBehaviour
         return newRoads;
     }
 
+    private void AddSegment(Road segment, List<Road> segments, QuadTree<Road> quadTree)
+    {
+        segments.Add(segment);
+        quadTree.Insert(segment);
+    }
+
+    private float MinDegreeDifference(float firstDeg, float secDeg)
+    {
+        var diff = Math.Abs(firstDeg - secDeg) % 180.0f;
+        return Math.Min(diff, Math.Abs(diff - 180.0f));
+    }
+
     private void GeneratePopulationHeatMap(int width, int height)
     {
         //var seed = UnityEngine.Random.Range(0, 100); 
@@ -202,7 +246,7 @@ public class RoadNetwork : MonoBehaviour
         }*/
 
         DrawHeatMap(width, height);
-        GetHeatMapAtLog();
+        //GetHeatMapAtLog();
     }
 
     private double GetHeatMapAt(float i, float j)
@@ -258,5 +302,36 @@ public class RoadNetwork : MonoBehaviour
             != ((lineTwoB.z - lineOneA.z) * (lineOneB.x - lineOneA.x) > (lineOneB.z - lineOneA.z) * (lineTwoB.x - lineOneA.x)));
         }
         return ret;
+    }
+
+    // Calculate the distance between
+    // point pt and the segment p1 --> p2.
+    private double FindDistanceToSegment(
+        Vector3 point, Vector3 segmentStart, Vector3 segmentEnd, out float t)
+    {
+        Vector3 closest;
+        float dx = segmentEnd.x - segmentStart.x;
+        float dz = segmentEnd.z - segmentStart.z;
+        t = 0;
+        if ((dx == 0) && (dz == 0))
+        {
+            // It's a point not a line segment.
+            closest = segmentStart;
+            dx = point.x - segmentStart.x;
+            dz = point.z - segmentStart.z;
+            return Math.Sqrt(dx * dx + dz * dz);
+        }
+
+        // Calculate the t that minimizes the distance.
+        t = ((point.x - segmentStart.x) * dx + (point.z - segmentStart.z) * dz) /
+            (dx * dx + dz * dz);
+
+        
+        closest = new Vector3(segmentStart.x + t * dx, segmentStart.z + t * dz);
+        dx = point.x - closest.x;
+        dz = point.z - closest.z;
+        
+
+        return Math.Sqrt(dx * dx + dz * dz);
     }
 }
