@@ -4,19 +4,21 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Drawing;
 using System;
+using QuadTrees.QTreeRect;
 
 [Serializable]
-public class Road : IHasRect
+public class Road : IHasRect, IRectQuadStorable
 {
     public Vector3 Start { get; set; }
     public Vector3 End { get; set; }
-    public float DirectionAngle { get; set; }
+    public float DirectionAngle; //{ get; set; }
     public int Number { get; set; }
     public float Length { get => (End - Start).magnitude; }
     public bool IsHighway { get; set; }
     public float Population { get; set; }
     public UnityEngine.Color color { get; set; } = UnityEngine.Color.red;
 
+    //public int AddedToQtreeTime;
     //Quadtree
     public RectangleF Rectangle
     {
@@ -36,6 +38,8 @@ public class Road : IHasRect
             return r;
         }
     }
+
+    public RectangleF Rect => Rectangle;
 
     public static Road RoadWithDirection(Vector3 start, float directionAngle, float length, int number, bool isHighway)
     {

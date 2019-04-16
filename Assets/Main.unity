@@ -145,7 +145,7 @@ MonoBehaviour:
     type: 3}
   heatMapField: {fileID: 7979273921155070986, guid: 0e63cc6369de07c4fbe03a5a1494235e,
     type: 3}
-  numOfSteps: 500
+  numOfSteps: 2000
 --- !u!4 &111381106
 Transform:
   m_ObjectHideFlags: 0

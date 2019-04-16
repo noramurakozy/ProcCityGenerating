@@ -1,13 +1,14 @@
 ﻿
-using QuadTreeLib;
+using QuadTrees;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using UnityEngine;
 
 public class RoadNetwork : MonoBehaviour
 {
-    private QuadTree<Road> qTree;
+    private QuadTreeRect<Road> qTree;
     private List<Road> primaryQueue;
     private List<Road> finalSegments;
     private double[,] heatMap;
@@ -31,17 +32,21 @@ public class RoadNetwork : MonoBehaviour
     private readonly int HIGHWAY_RANDOM_ANGLE = 15;
     private readonly int DEFAULT_ROAD_RANDOM_ANGLE = 3;
     private readonly int MINIMUM_INTERSECTION_DEVIATION = 30;
-    private readonly int ROAD_SNAP_DISTANCE = 50;
+    private readonly float ROAD_SNAP_DISTANCE = 1;
     private readonly float MAP_HEIGHT = 200;
     private readonly float MAP_WIDTH = 200;
     private Rect bounds;
+    //public static int lastAddedTime = 0;
 
     int heatMapScale = 1;
+
+    //Rect rect = new Rect(40, 40, 10, 10);
 
     // Start is called before the first frame update
     void Start()
     {
-        qTree = new QuadTree<Road>(new System.Drawing.RectangleF(-5000, -5000, 10000, 10000));
+        UnityEngine.Random.InitState(12345678);
+        qTree = new QuadTreeRect<Road>(new RectangleF(-5000, -5000, 10000, 10000));
         bounds = new Rect(0, 0, MAP_WIDTH, MAP_HEIGHT);
         GeneratePopulationHeatMap((int)MAP_WIDTH / heatMapScale, (int)MAP_HEIGHT / heatMapScale);
         primaryQueue = new List<Road>() {
@@ -77,8 +82,20 @@ public class RoadNetwork : MonoBehaviour
         Debug.Log("start end");
     }
 
+    /*void OnDrawGizmos()
+    {
+        Gizmos.color = UnityEngine.Color.green;
+        Gizmos.DrawWireCube(new Vector3(rect.center.x, 1, rect.center.y), new Vector3(rect.size.x, 1, rect.size.y));
+    }*/
+
     private System.Collections.IEnumerator DrawSegments()
     {
+        //var intersects = qTree.GetObjects(new RectangleF(rect.min.x, rect.min.y, rect.width, rect.height));
+
+        /*foreach (var item in intersects)
+        {
+            item.color = UnityEngine.Color.white;
+        }*/
         foreach (var road in finalSegments)
         {
             var roadView = Instantiate(roadViewPrefab);
@@ -86,8 +103,8 @@ public class RoadNetwork : MonoBehaviour
 
             if (road.IsHighway)
             {
-                roadView.GetComponent<LineRenderer>().endColor = new Color(0, 0, 1);
-                roadView.GetComponent<LineRenderer>().startColor = new Color(0, 0, 1);
+                roadView.GetComponent<LineRenderer>().endColor = new UnityEngine.Color(0, 0, 1);
+                roadView.GetComponent<LineRenderer>().startColor = new UnityEngine.Color(0, 0, 1);
             }else
             {
                 roadView.GetComponent<LineRenderer>().endColor = roadView.road.color;
@@ -104,16 +121,24 @@ public class RoadNetwork : MonoBehaviour
 
     private Road CheckLocalConstraints(Road r)
     {
-        foreach (var otherSegment in qTree.Query(r.Rectangle))
+        foreach (var otherSegment in qTree.GetObjects(r.Rectangle))
         {
             float t;
-            if (FindDistanceToSegment(r.End, otherSegment.Start, otherSegment.End, out t) < ROAD_SNAP_DISTANCE * ROAD_SNAP_DISTANCE
-                && t >= 0 && t <= (otherSegment.End - otherSegment.Start).magnitude)
+            Vector3 pointOnLine;
+
+            var otherLength = (otherSegment.End - otherSegment.Start).x * (otherSegment.End - otherSegment.Start).x + (otherSegment.End - otherSegment.Start).y * (otherSegment.End - otherSegment.Start).y;
+            var distanceToLine = FindDistanceToSegment(r.End, otherSegment.Start, otherSegment.End, out t, out pointOnLine);
+
+            r.color = UnityEngine.Color.magenta;
+            if (distanceToLine < ROAD_SNAP_DISTANCE && t >= 0 && t <= 1)
             {
-                if (MinDegreeDifference(r.DirectionAngle, otherSegment.DirectionAngle) < MINIMUM_INTERSECTION_DEVIATION)
+                //r.End = pointOnLine;
+                //otherSegment.color = UnityEngine.Color.white;
+                var minDegreeDiff = MinDegreeDifference(r.DirectionAngle, otherSegment.DirectionAngle);
+                if ( minDegreeDiff < MINIMUM_INTERSECTION_DEVIATION)
                 {
-                    Debug.Log("qtree intersect " + MinDegreeDifference(r.DirectionAngle, otherSegment.DirectionAngle));
-                    r.color = Color.magenta;
+                    Debug.Log("qtree intersect " + distanceToLine + pointOnLine + " " + minDegreeDiff);
+                    //otherSegment.color = UnityEngine.Color.red;
                     return null;
                 }
                 
@@ -217,14 +242,17 @@ public class RoadNetwork : MonoBehaviour
         return newRoads;
     }
 
-    private void AddSegment(Road segment, List<Road> segments, QuadTree<Road> quadTree)
+    private void AddSegment(Road segment, List<Road> segments, QuadTreeRect<Road> quadTree)
     {
         segments.Add(segment);
-        quadTree.Insert(segment);
+        quadTree.Add(segment);
+        //lastAddedTime++;
+        //segment.AddedToQtreeTime = lastAddedTime;
     }
 
     private float MinDegreeDifference(float firstDeg, float secDeg)
     {
+        //-92,-271
         var diff = Math.Abs(firstDeg - secDeg) % 180.0f;
         return Math.Min(diff, Math.Abs(diff - 180.0f));
     }
@@ -280,7 +308,7 @@ public class RoadNetwork : MonoBehaviour
                 //else
                 //{
                 //}
-                cube.GetComponent<Renderer>().material.color = new Color(5 * (float)result/ 255.0f, 25.5f * (float)result/ 255.0f, 40 / 255.0f);
+                cube.GetComponent<Renderer>().material.color = new UnityEngine.Color(5 * (float)result/ 255.0f, 25.5f * (float)result/ 255.0f, 40 / 255.0f);
             }
         }
 
@@ -307,31 +335,19 @@ public class RoadNetwork : MonoBehaviour
     // Calculate the distance between
     // point pt and the segment p1 --> p2.
     private double FindDistanceToSegment(
-        Vector3 point, Vector3 segmentStart, Vector3 segmentEnd, out float t)
+        Vector3 point, Vector3 segmentStart, Vector3 segmentEnd, out float t, out Vector3 closest)
     {
-        Vector3 closest;
         float dx = segmentEnd.x - segmentStart.x;
         float dz = segmentEnd.z - segmentStart.z;
-        t = 0;
-        if ((dx == 0) && (dz == 0))
-        {
-            // It's a point not a line segment.
-            closest = segmentStart;
-            dx = point.x - segmentStart.x;
-            dz = point.z - segmentStart.z;
-            return Math.Sqrt(dx * dx + dz * dz);
-        }
 
         // Calculate the t that minimizes the distance.
         t = ((point.x - segmentStart.x) * dx + (point.z - segmentStart.z) * dz) /
             (dx * dx + dz * dz);
 
-        
-        closest = new Vector3(segmentStart.x + t * dx, segmentStart.z + t * dz);
+        closest = new Vector3(segmentStart.x + t * dx, 0, segmentStart.z + t * dz);
         dx = point.x - closest.x;
         dz = point.z - closest.z;
         
-
         return Math.Sqrt(dx * dx + dz * dz);
     }
 }
