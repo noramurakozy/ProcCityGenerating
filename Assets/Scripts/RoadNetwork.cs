@@ -36,7 +36,7 @@ public class RoadNetwork : MonoBehaviour
     private readonly float MAP_HEIGHT = 200;
     private readonly float MAP_WIDTH = 200;
     private Rect bounds;
-    //public static int lastAddedTime = 0;
+    public static int lastAddedTime = 0;
 
     int heatMapScale = 1;
 
@@ -123,34 +123,30 @@ public class RoadNetwork : MonoBehaviour
     {
         foreach (var otherSegment in qTree.GetObjects(r.Rectangle))
         {
-            float t;
-            Vector3 pointOnLine;
-
-            var otherLength = (otherSegment.End - otherSegment.Start).x * (otherSegment.End - otherSegment.Start).x + (otherSegment.End - otherSegment.Start).y * (otherSegment.End - otherSegment.Start).y;
-            var distanceToLine = FindDistanceToSegment(r.End, otherSegment.Start, otherSegment.End, out t, out pointOnLine);
-
             r.color = UnityEngine.Color.magenta;
-            if (distanceToLine < ROAD_SNAP_DISTANCE && t >= 0 && t <= 1)
+            //check if r and other segment are too similar
+            if(CheckSegmentsEndPointsDistance(r.Start, otherSegment.Start, r.End, otherSegment.End))
             {
-                //r.End = pointOnLine;
-                //otherSegment.color = UnityEngine.Color.white;
-                var minDegreeDiff = MinDegreeDifference(r.DirectionAngle, otherSegment.DirectionAngle);
-                if ( minDegreeDiff < MINIMUM_INTERSECTION_DEVIATION)
-                {
-                    Debug.Log("qtree intersect " + distanceToLine + pointOnLine + " " + minDegreeDiff);
-                    //otherSegment.color = UnityEngine.Color.red;
-                    return null;
-                }
-                
-            }
-                //check intersections
-                
-            /*if (lineSegmentsIntersect(r.Start, r.End, otherSegment.Start, otherSegment.End))
-            {
-                Debug.Log("Intersect in the rect");
                 return null;
-            }*/
+            }
         }
+        //prio 3
+        /*Rect checkRect = new Rect()
+        {
+            center = new Vector2(r.End.x, r.End.z),
+            width = 3,
+            height = 3
+        };
+
+        foreach (var other in qTree.GetObjects(new RectangleF(checkRect.x, checkRect.y, checkRect.width, checkRect.height)))
+        {
+            if (Vector3.Distance(r.End, other.End) <= 0.5)
+            {
+                r.End = other.End;
+                return r;
+            }
+        }*/
+        //check intersections
         foreach (Road segment in finalSegments)
         {
             if (lineSegmentsIntersect(r.Start, r.End, segment.Start, segment.End))
@@ -242,12 +238,17 @@ public class RoadNetwork : MonoBehaviour
         return newRoads;
     }
 
+
+    private bool CheckSegmentsEndPointsDistance(Vector3 start1, Vector3 start2, Vector3 end1, Vector3 end2)
+    {
+        return Vector3.Distance(start1, start2) <= ROAD_SNAP_DISTANCE && Vector3.Distance(end1, end2) <= ROAD_SNAP_DISTANCE || Vector3.Distance(start1, end2) <= ROAD_SNAP_DISTANCE && Vector3.Distance(start2, end1) <= ROAD_SNAP_DISTANCE;
+    }
     private void AddSegment(Road segment, List<Road> segments, QuadTreeRect<Road> quadTree)
     {
         segments.Add(segment);
         quadTree.Add(segment);
-        //lastAddedTime++;
-        //segment.AddedToQtreeTime = lastAddedTime;
+        lastAddedTime++;
+        segment.AddedToQtreeTime = lastAddedTime;
     }
 
     private float MinDegreeDifference(float firstDeg, float secDeg)
