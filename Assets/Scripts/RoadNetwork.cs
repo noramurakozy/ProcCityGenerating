@@ -45,7 +45,7 @@ public class RoadNetwork : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        UnityEngine.Random.InitState(12345678);
+        //UnityEngine.Random.InitState(12345678);
         qTree = new QuadTreeRect<Road>(new RectangleF(-5000, -5000, 10000, 10000));
         bounds = new Rect(0, 0, MAP_WIDTH, MAP_HEIGHT);
         GeneratePopulationHeatMap((int)MAP_WIDTH / heatMapScale, (int)MAP_HEIGHT / heatMapScale);
@@ -67,14 +67,12 @@ public class RoadNetwork : MonoBehaviour
                 continue;
             }
 
-            //finalSegments.Add(modified);
             AddSegment(modified, finalSegments, qTree);
 
             foreach (Road road in GlobalGoals(modified))
             {
                 primaryQueue.Add(new Road() { Number = min.Number + road.Number + 1, Start = road.Start, End = road.End, DirectionAngle = road.DirectionAngle, IsHighway = road.IsHighway });
             }
-
         }
 
         StartCoroutine(DrawSegments());
@@ -123,36 +121,50 @@ public class RoadNetwork : MonoBehaviour
     {
         foreach (var otherSegment in qTree.GetObjects(r.Rectangle))
         {
-            r.color = UnityEngine.Color.magenta;
-            //check if r and other segment are too similar
-            if(CheckSegmentsEndPointsDistance(r.Start, otherSegment.Start, r.End, otherSegment.End))
+            //r.color = UnityEngine.Color.magenta;
+
+            //check if r and other segment are too similar --> r is not necessary
+            if (CheckSegmentsEndPointsDistance(r.Start, otherSegment.Start, r.End, otherSegment.End))
             {
                 return null;
             }
-        }
-        //prio 3
-        /*Rect checkRect = new Rect()
-        {
-            center = new Vector2(r.End.x, r.End.z),
-            width = 3,
-            height = 3
-        };
 
-        foreach (var other in qTree.GetObjects(new RectangleF(checkRect.x, checkRect.y, checkRect.width, checkRect.height)))
-        {
-            if (Vector3.Distance(r.End, other.End) <= 0.5)
+            //snap to crossing
+            if (Vector3.Distance(r.End, otherSegment.End) < ROAD_SNAP_DISTANCE)
             {
-                r.End = other.End;
-                return r;
+                r.End = otherSegment.End;
+                //r.color = UnityEngine.Color.cyan;
+
+                //check if it's still fits after the end was updated
+                foreach (var item in qTree.GetObjects(r.Rectangle))
+                {
+                    //2. condition is in order to not filter \/ <-- this kind of roads, just these: ||
+                    if (MinDegreeDifference(r.DirectionAngle, item.DirectionAngle) <= 10 && CheckSegmentsEndPointsDistance(r.Start, item.Start, r.End, item.End))
+                    {
+                        return null;
+                    }
+                }
             }
-        }*/
+
+            ////if the two lines intersects somewhere, set the end to the intersection point
+            //Vector3? intersection = LineIntersect(r.Start, r.End, otherSegment.Start, otherSegment.End);
+
+            ////the r.Start does not matter what
+            //Debug.Log(intersection);
+            //r.End = Vector3.Distance(r.End, intersection ?? Vector3.zero) < 2 ? (intersection ?? r.End) : r.End;
+
+
+        }
+        
         //check intersections
         foreach (Road segment in finalSegments)
         {
-            if (lineSegmentsIntersect(r.Start, r.End, segment.Start, segment.End))
+            if (LineSegmentsIntersect(r.Start, r.End, segment.Start, segment.End)
+                || CheckSegmentsEndPointsDistance(r.Start, segment.Start, r.End, segment.End))
             {
                 return null;
             }
+
         }
         return r;
     }
@@ -241,7 +253,7 @@ public class RoadNetwork : MonoBehaviour
 
     private bool CheckSegmentsEndPointsDistance(Vector3 start1, Vector3 start2, Vector3 end1, Vector3 end2)
     {
-        return Vector3.Distance(start1, start2) <= ROAD_SNAP_DISTANCE && Vector3.Distance(end1, end2) <= ROAD_SNAP_DISTANCE || Vector3.Distance(start1, end2) <= ROAD_SNAP_DISTANCE && Vector3.Distance(start2, end1) <= ROAD_SNAP_DISTANCE;
+        return (Vector3.Distance(start1, start2) <= ROAD_SNAP_DISTANCE && Vector3.Distance(end1, end2) <= ROAD_SNAP_DISTANCE || Vector3.Distance(start1, end2) <= ROAD_SNAP_DISTANCE && Vector3.Distance(start2, end1) <= ROAD_SNAP_DISTANCE);
     }
     private void AddSegment(Road segment, List<Road> segments, QuadTreeRect<Road> quadTree)
     {
@@ -320,7 +332,7 @@ public class RoadNetwork : MonoBehaviour
         return Quaternion.Euler(0, angle, 0) * inputVector;
     }
 
-    private bool lineSegmentsIntersect(Vector3 lineOneA, Vector3 lineOneB, Vector3 lineTwoA, Vector3 lineTwoB)
+    private bool LineSegmentsIntersect(Vector3 lineOneA, Vector3 lineOneB, Vector3 lineTwoA, Vector3 lineTwoB)
     {
         bool ret = false;
         if (!(lineOneA == lineTwoA || lineOneA == lineTwoB || lineOneB == lineTwoA || lineOneB == lineTwoB))
@@ -333,10 +345,36 @@ public class RoadNetwork : MonoBehaviour
         return ret;
     }
 
+    private Vector3? LineIntersect(Vector3 lineOneA, Vector3 lineOneB, Vector3 lineTwoA, Vector3 lineTwoB)
+    {
+        //Line1: A1x + B1y = C1
+        float A1 = lineOneB.z - lineOneA.z;
+        float B1 = lineOneB.x - lineOneA.x;
+        float C1 = A1 * lineOneA.x + B1 * lineOneA.z;
+
+        //Line2: A2x + B2y = C2
+        float A2 = lineTwoB.z - lineTwoA.z;
+        float B2 = lineTwoB.x - lineTwoA.x;
+        float C2 = A2 * lineTwoA.x + B2 * lineTwoA.z;
+
+        float delta = A1 * B2 - A2 * B1;
+
+        if (delta == 0)
+        {
+            //throw new ArgumentException("Lines are parallel");
+            return null;
+        }
+
+        float x = (B2 * C1 - B1 * C2) / delta;
+        float z = (A1 * C2 - A2 * C1) / delta;
+
+        return new Vector3(x, 0, z);
+
+    }
+
     // Calculate the distance between
     // point pt and the segment p1 --> p2.
-    private double FindDistanceToSegment(
-        Vector3 point, Vector3 segmentStart, Vector3 segmentEnd, out float t, out Vector3 closest)
+    private double FindDistanceToSegment(Vector3 point, Vector3 segmentStart, Vector3 segmentEnd, out float t, out Vector3 closest)
     {
         float dx = segmentEnd.x - segmentStart.x;
         float dz = segmentEnd.z - segmentStart.z;
