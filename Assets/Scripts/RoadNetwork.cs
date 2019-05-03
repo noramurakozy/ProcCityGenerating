@@ -45,7 +45,7 @@ public class RoadNetwork : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        //UnityEngine.Random.InitState(12345678);
+        UnityEngine.Random.InitState(12345678);
         qTree = new QuadTreeRect<Road>(new RectangleF(-5000, -5000, 10000, 10000));
         bounds = new Rect(0, 0, MAP_WIDTH, MAP_HEIGHT);
         GeneratePopulationHeatMap((int)MAP_WIDTH / heatMapScale, (int)MAP_HEIGHT / heatMapScale);
@@ -160,7 +160,8 @@ public class RoadNetwork : MonoBehaviour
         foreach (Road segment in finalSegments)
         {
             if (LineSegmentsIntersect(r.Start, r.End, segment.Start, segment.End)
-                || CheckSegmentsEndPointsDistance(r.Start, segment.Start, r.End, segment.End))
+                || CheckSegmentsEndPointsDistance(r.Start, segment.Start, r.End, segment.End)
+                || (MinDegreeDifference(r.DirectionAngle, segment.DirectionAngle) <= 10 && (r.End.Equals(segment.End) || r.Start.Equals(segment.Start))))
             {
                 return null;
             }
