@@ -28,6 +28,19 @@ public class Road : IHasRect, IRectQuadStorable
         }
     }
 
+    public RectangleF StartRectangle
+    {
+        get
+        {
+            var r = new Rect();
+            r.width = 0.5f;
+            r.height = 0.5f;
+            r.center = new Vector2(Start.x, Start.z);
+
+            return new RectangleF(r.x, r.y, r.width, r.height);
+        }
+    }
+
     public Rect Bounds {
         get
         {

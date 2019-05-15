@@ -146,6 +146,19 @@ public class RoadNetwork : MonoBehaviour
                 }
             }
 
+            
+            //snap to crossing if the roads are like |--
+            //if(FindDistanceToSegment(r.End, otherSegment.Start, otherSegment.End, out _, out _) < ROAD_SNAP_DISTANCE/* || FindDistanceToSegment(r.Start, otherSegment.Start, otherSegment.End, out _, out _) < ROAD_SNAP_DISTANCE*/)
+            //{
+            //    //r.End = Vector3.Distance(r.End, otherSegment.Start) < Vector3.Distance(r.End, otherSegment.End) ? otherSegment.Start : otherSegment.End;
+            //    //return r;
+            //    if(!r.End.Equals(otherSegment.End) && !r.End.Equals(otherSegment.Start) && !r.Start.Equals(otherSegment.Start) && !r.Start.Equals(otherSegment.End))
+            //    {
+            //        r.color = UnityEngine.Color.magenta;
+            //        otherSegment.color = UnityEngine.Color.white;
+            //    }
+            //}
+
             ////if the two lines intersects somewhere, set the end to the intersection point
             //Vector3? intersection = LineIntersect(r.Start, r.End, otherSegment.Start, otherSegment.End);
 
@@ -154,6 +167,18 @@ public class RoadNetwork : MonoBehaviour
             //r.End = Vector3.Distance(r.End, intersection ?? Vector3.zero) < 2 ? (intersection ?? r.End) : r.End;
 
 
+        }
+
+        //check if more than 4 roads are in the crossing
+        var roadsInCrossing = qTree.GetObjects(r.StartRectangle);
+        foreach (var roadInCrossing in roadsInCrossing)
+        {
+            if(roadsInCrossing.Count >= 4)
+            {
+                //roadInCrossing.color = UnityEngine.Color.cyan;
+                //r.color = UnityEngine.Color.white;
+                return null;
+            }
         }
         
         //check intersections
