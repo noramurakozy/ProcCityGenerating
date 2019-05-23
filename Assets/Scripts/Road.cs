@@ -7,7 +7,7 @@ using System;
 using QuadTrees.QTreeRect;
 
 [Serializable]
-public class Road : IHasRect, IRectQuadStorable
+public class Road : IRectQuadStorable
 {
     public Vector3 Start { get; set; }
     public Vector3 End { get; set; }

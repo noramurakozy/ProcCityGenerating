@@ -35,7 +35,9 @@ public class RoadNetwork : MonoBehaviour
     private readonly float ROAD_SNAP_DISTANCE = 1;
     private readonly float MAP_HEIGHT = 200;
     private readonly float MAP_WIDTH = 200;
-    private Rect bounds;
+    private readonly UnityEngine.Color HIGHWAY_COLOR = UnityEngine.Color.black;
+    private readonly UnityEngine.Color SECONDARY_ROAD_COLOR = UnityEngine.Color.red;
+    //private Rect bounds;
     public static int lastAddedTime = 0;
 
     int heatMapScale = 1;
@@ -45,10 +47,10 @@ public class RoadNetwork : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        UnityEngine.Random.InitState(12345678);
+        //UnityEngine.Random.InitState(12345678);
         qTree = new QuadTreeRect<Road>(new RectangleF(-5000, -5000, 10000, 10000));
-        bounds = new Rect(0, 0, MAP_WIDTH, MAP_HEIGHT);
-        GeneratePopulationHeatMap((int)MAP_WIDTH / heatMapScale, (int)MAP_HEIGHT / heatMapScale);
+        //bounds = new Rect(0, 0, MAP_WIDTH, MAP_HEIGHT);
+        DrawHeatMap((int)MAP_WIDTH / heatMapScale, (int)MAP_HEIGHT / heatMapScale);
         primaryQueue = new List<Road>() {
             new Road() { Start = new Vector3(MAP_HEIGHT/2, 0, MAP_WIDTH/2), End = new Vector3(MAP_HEIGHT/2+HIGHWAY_SEGMENT_LENGTH, 0, MAP_WIDTH/2), Number = 0, IsHighway = true },
             new Road() { Start = new Vector3(MAP_HEIGHT/2, 0, MAP_WIDTH/2), End = new Vector3(MAP_HEIGHT/2-HIGHWAY_SEGMENT_LENGTH, 0, MAP_WIDTH/2), Number = 0, IsHighway = true, DirectionAngle = 180 }
@@ -99,11 +101,14 @@ public class RoadNetwork : MonoBehaviour
             var roadView = Instantiate(roadViewPrefab);
             roadView.Road = road;
 
+            road.color = SECONDARY_ROAD_COLOR;
+
             if (road.IsHighway)
             {
-                roadView.GetComponent<LineRenderer>().endColor = new UnityEngine.Color(0, 0, 1);
-                roadView.GetComponent<LineRenderer>().startColor = new UnityEngine.Color(0, 0, 1);
-            }else
+                roadView.GetComponent<LineRenderer>().endColor = HIGHWAY_COLOR;
+                roadView.GetComponent<LineRenderer>().startColor = HIGHWAY_COLOR;
+            }
+            else
             {
                 roadView.GetComponent<LineRenderer>().endColor = roadView.road.color;
                 roadView.GetComponent<LineRenderer>().startColor = roadView.road.color;
@@ -121,19 +126,10 @@ public class RoadNetwork : MonoBehaviour
     {
         foreach (var otherSegment in qTree.GetObjects(r.Rectangle))
         {
-            //r.color = UnityEngine.Color.magenta;
-
-            //check if r and other segment are too similar --> r is not necessary
-            if (CheckSegmentsEndPointsDistance(r.Start, otherSegment.Start, r.End, otherSegment.End))
-            {
-                return null;
-            }
-
             //snap to crossing
             if (Vector3.Distance(r.End, otherSegment.End) < ROAD_SNAP_DISTANCE)
             {
                 r.End = otherSegment.End;
-                //r.color = UnityEngine.Color.cyan;
 
                 //check if it's still fits after the end was updated
                 foreach (var item in qTree.GetObjects(r.Rectangle))
@@ -146,47 +142,34 @@ public class RoadNetwork : MonoBehaviour
                 }
             }
 
-            
+
             //snap to crossing if the roads are like |--
-            //if(FindDistanceToSegment(r.End, otherSegment.Start, otherSegment.End, out _, out _) < ROAD_SNAP_DISTANCE/* || FindDistanceToSegment(r.Start, otherSegment.Start, otherSegment.End, out _, out _) < ROAD_SNAP_DISTANCE*/)
-            //{
-            //    //r.End = Vector3.Distance(r.End, otherSegment.Start) < Vector3.Distance(r.End, otherSegment.End) ? otherSegment.Start : otherSegment.End;
-            //    //return r;
-            //    if(!r.End.Equals(otherSegment.End) && !r.End.Equals(otherSegment.Start) && !r.Start.Equals(otherSegment.Start) && !r.Start.Equals(otherSegment.End))
-            //    {
-            //        r.color = UnityEngine.Color.magenta;
-            //        otherSegment.color = UnityEngine.Color.white;
-            //    }
-            //}
-
-            ////if the two lines intersects somewhere, set the end to the intersection point
-            //Vector3? intersection = LineIntersect(r.Start, r.End, otherSegment.Start, otherSegment.End);
-
-            ////the r.Start does not matter what
-            //Debug.Log(intersection);
-            //r.End = Vector3.Distance(r.End, intersection ?? Vector3.zero) < 2 ? (intersection ?? r.End) : r.End;
-
+            /*if (FindDistanceToSegment(r.End, otherSegment.Start, otherSegment.End, out _, out _) < ROAD_SNAP_DISTANCE || FindDistanceToSegment(r.Start, otherSegment.Start, otherSegment.End, out _, out _) < ROAD_SNAP_DISTANCE)
+            {
+                //r.End = Vector3.Distance(r.End, otherSegment.Start) < Vector3.Distance(r.End, otherSegment.End) ? otherSegment.Start : otherSegment.End;
+                //return r;
+                if (!r.End.Equals(otherSegment.End) && !r.End.Equals(otherSegment.Start) && !r.Start.Equals(otherSegment.Start) && !r.Start.Equals(otherSegment.End))
+                {
+                    //r.color = UnityEngine.Color.magenta;
+                    //otherSegment.color = UnityEngine.Color.white;
+                }
+            }*/
 
         }
 
         //check if more than 4 roads are in the crossing
-        var roadsInCrossing = qTree.GetObjects(r.StartRectangle);
-        foreach (var roadInCrossing in roadsInCrossing)
+        if(qTree.GetObjects(r.StartRectangle).Count >= 4)
         {
-            if(roadsInCrossing.Count >= 4)
-            {
-                //roadInCrossing.color = UnityEngine.Color.cyan;
-                //r.color = UnityEngine.Color.white;
-                return null;
-            }
+            //roadInCrossing.color = UnityEngine.Color.cyan;
+            //r.color = UnityEngine.Color.white;
+            return null;
         }
         
         //check intersections
         foreach (Road segment in finalSegments)
         {
             if (LineSegmentsIntersect(r.Start, r.End, segment.Start, segment.End)
-                || CheckSegmentsEndPointsDistance(r.Start, segment.Start, r.End, segment.End)
-                || (MinDegreeDifference(r.DirectionAngle, segment.DirectionAngle) <= 10 && (r.End.Equals(segment.End) || r.Start.Equals(segment.Start))))
+                || CheckSegmentsEndPointsDistance(r.Start, segment.Start, r.End, segment.End))
             {
                 return null;
             }
@@ -203,7 +186,7 @@ public class RoadNetwork : MonoBehaviour
         var straightPopulation = GetHeatMapAt(straightRoad.End.x, straightRoad.End.z);
 
         if (previousRoad.IsHighway)
-        {
+         {
             var angle = previousRoad.DirectionAngle + UnityEngine.Random.Range(-HIGHWAY_RANDOM_ANGLE, HIGHWAY_RANDOM_ANGLE);
             Road randomAngleRoad = Road.RoadWithDirection(previousRoad.End, angle, previousRoad.Length, 0, previousRoad.IsHighway);
 
@@ -296,34 +279,9 @@ public class RoadNetwork : MonoBehaviour
         return Math.Min(diff, Math.Abs(diff - 180.0f));
     }
 
-    private void GeneratePopulationHeatMap(int width, int height)
-    {
-        //var seed = UnityEngine.Random.Range(0, 100); 
-        //heatMap = new double[width, height];
-        /*for (int i = 0; i < width; i++)
-        {
-            for (int j = 0; j < height; j++)
-            {
-                //heatMap[i, j] = (int)(Mathf.PerlinNoise(i * 0.151f + seed, j * 0.151f + seed) * 10);
-                var value1 = (Mathf.PerlinNoise(i / 10000.0f, j / 10000.0f) + 1) / 2.0f;
-                var value2 = (Mathf.PerlinNoise(i / 20000.0f + 500, j / 20000.0f + 500) + 1) / 2.0f;
-                var value3 = (Mathf.PerlinNoise(i / 20000.0f + 1000, j / 20000.0f + 1000) + 1) / 2.0f;
-                heatMap[i, j] = Math.Pow((value1 * value2 + value3) / 2, 2);
-            }
-        }*/
-
-        DrawHeatMap(width, height);
-        //GetHeatMapAtLog();
-    }
-
     private double GetHeatMapAt(float i, float j)
     {
         return (Mathf.PerlinNoise(i / 30f, j / 30f) * 8);
-    }
-
-    public void GetHeatMapAtLog()
-    {
-        Debug.Log((Mathf.PerlinNoise(49.29263f / 30f, 31.5672f / 30f) * 8));
     }
 
     private void DrawHeatMap(int width, int height)
@@ -336,17 +294,9 @@ public class RoadNetwork : MonoBehaviour
 
                 Vector3 pos = new Vector3(i, -2, j);
 
-                //Debug.Log(GetHeatMapAt(i, j));
                 var cube = Instantiate(heatMapField);
-                //cube.transform.localScale = new Vector3(heatMapScale, 1, heatMapScale);
                 cube.transform.position = pos * heatMapScale;
-                //if(result <= NORMAL_BRANCH_POPULATION_THRESHOLD)
-                //{
-                //    //cube.GetComponent<Renderer>().material.color = new Color(0,0,0);
-                //}
-                //else
-                //{
-                //}
+                cube.transform.localScale = new Vector3(heatMapScale, 0.1f, heatMapScale);
                 cube.GetComponent<Renderer>().material.color = new UnityEngine.Color(5 * (float)result/ 255.0f, 25.5f * (float)result/ 255.0f, 40 / 255.0f);
             }
         }
