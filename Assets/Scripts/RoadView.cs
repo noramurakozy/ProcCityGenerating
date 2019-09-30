@@ -12,6 +12,7 @@ public class RoadView : MonoBehaviour
 
     public void Draw()
     {
+        Line = GetComponent<LineRenderer>();
         Line.SetPosition(0, Road.Start);
         Line.SetPosition(1, Road.End);
     }
@@ -20,7 +21,6 @@ public class RoadView : MonoBehaviour
     {
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireCube(new Vector3(road.Bounds.center.x, 1, road.Bounds.center.y), new Vector3(road.Bounds.size.x, 1, road.Bounds.size.y));
-
     }
 
     void Awake()

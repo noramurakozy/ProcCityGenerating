@@ -6,11 +6,6 @@ public class PlaneGenerator : MonoBehaviour
 {
     private Vector3[] vertices;
 
-    private void Awake()
-    {
-        Generate();
-    }
-
     //private void OnDrawGizmos()
     //{
     //    if (vertices == null)
@@ -24,13 +19,11 @@ public class PlaneGenerator : MonoBehaviour
     //    }
     //}
 
-    private void Generate()
+    public void Generate(int xSize, int zSize)
     {
         Mesh mesh;
         GetComponent<MeshFilter>().mesh = mesh = new Mesh();
         mesh.name = "Procedural Grid";
-        int xSize = 200;
-        int zSize = 200;
         vertices = new Vector3[(xSize + 1) * (zSize + 1)];
         var uv = new Vector2[(xSize + 1) * (zSize + 1)];
         for (int i = 0, y = 0; y <= zSize; y++)
@@ -65,8 +58,8 @@ public class PlaneGenerator : MonoBehaviour
                 colors[i++] = new UnityEngine.Color(5 * (float)result / 255.0f, 40f * (float)result / 255.0f, 40 / 255.0f);
             }
         }
-
         mesh.colors = colors;
+        transform.position = new Vector3(0, -2, 0);
     }
 
     private double GetHeatMapAt(float i, float j)
@@ -83,8 +76,6 @@ public class PlaneGenerator : MonoBehaviour
             for (int j = 0; j < height; j++)
             {
                 double result = GetHeatMapAt(i, j);
-
-
                 colors[k++] = new UnityEngine.Color(5 * (float)result / 255.0f, 25.5f * (float)result / 255.0f, 40 / 255.0f);
             }
         }

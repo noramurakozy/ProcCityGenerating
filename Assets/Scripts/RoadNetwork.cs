@@ -20,88 +20,94 @@ public class RoadNetwork : MonoBehaviour
     private GameObject heatMapField;
 
     [SerializeField]
-    [HideInInspector]
-    private int numOfSteps;
+    private GameObject populationMapBase;
 
-    [SerializeField]
-    [HideInInspector]
-    private double defaultBranchProbability = 0.3;
+    //public int numOfSteps = 3000;
 
-    [SerializeField]
-    [HideInInspector]
-    private double highwayBranchProbability = 0.05;
+    //public double defaultBranchProbability = 0.3;
 
-    [SerializeField]
-    [HideInInspector]
-    private double highwayBranchPopulationThreshold = 6;
+    //public double highwayBranchProbability = 0.05;
 
-    [SerializeField]
-    [HideInInspector]
-    private double normalBranchPopulationThreshold = 4;
+    //public double highwayBranchPopulationThreshold = 6;
 
-    [SerializeField]
-    [HideInInspector]
-    private int normalBranchTimeDelayFromHighway = 5;
+    //public double normalBranchPopulationThreshold = 4;
 
-    [SerializeField]
-    [HideInInspector]
-    private int highwaySegmentLength = 3;
+    //public int normalBranchTimeDelayFromHighway = 5;
 
-    [SerializeField]
-    [HideInInspector]
-    private int branchSegmentLength = 2;
+    //public int highwaySegmentLength = 3;
 
-    [SerializeField]
-    [HideInInspector]
-    private int highwayRandomAngle = 15;
+    //public int branchSegmentLength = 2;
 
-    [SerializeField, Range(1,360)]
-    private int defaultRoadRandomAngle = 3;
+    //public int highwayRandomAngle = 15;
 
-    [SerializeField]
-    [HideInInspector]
-    private int minimumIntersectionDeviation = 30;
+    //public int defaultRoadRandomAngle = 3;
 
-    [SerializeField]
-    [HideInInspector]
-    private float roadSnapDistance = 1;
+    //public int minimumIntersectionDeviation = 30;
 
-    [SerializeField]
-    [HideInInspector]
-    private float mapHeight = 200;
+    //public float roadSnapDistance = 1;
 
-    [SerializeField]
-    [HideInInspector]
-    private float mapWidth = 200;
+    //public float mapHeight = 200;
 
-    [SerializeField]
-    [HideInInspector]
-    private UnityEngine.Color highwayColor = UnityEngine.Color.black;
+    //public float mapWidth = 200;
 
-    [SerializeField]
-    [HideInInspector]
-    private UnityEngine.Color secondaryRoadColor = UnityEngine.Color.red;
+    //public UnityEngine.Color highwayColor = UnityEngine.Color.black;
+
+    //public UnityEngine.Color secondaryRoadColor = UnityEngine.Color.red;
+
+    public int NumOfSteps = 3000;
+
+    public double DefaultBranchProbability = 0.3;
+
+    public double HighwayBranchProbability = 0.05;
+
+    public double HighwayBranchPopulationThreshold = 6;
+
+    public double NormalBranchPopulationThreshold = 4;
+
+    public int NormalBranchTimeDelayFromHighway = 5;
+
+    public int HighwaySegmentLength = 3;
+
+    public int BranchSegmentLength = 2;
+
+    public int HighwayRandomAngle = 15;
+
+    public int DefaultRoadRandomAngle = 3;
+
+    public int MinimumIntersectionDeviation = 30;
+
+    public float RoadSnapDistance = 1;
+
+    public float MapHeight = 200;
+
+    public float MapWidth = 200;
+
+    public UnityEngine.Color HighwayColor = UnityEngine.Color.black;
+
+    public UnityEngine.Color SecondaryRoadColor = UnityEngine.Color.red;
+
+
     private Rect bounds;
     public static int lastAddedTime = 0;
 
     int heatMapScale = 1;
 
-    public int NumOfSteps { get => numOfSteps; set => numOfSteps = value; }
-    public double DefaultBranchProbability { get => defaultBranchProbability; set => defaultBranchProbability = value; }
-    public double HighwayBranchProbability { get => highwayBranchProbability; set => highwayBranchProbability = value; }
-    public double HighwayBranchPopulationThreshold { get => highwayBranchPopulationThreshold; set => highwayBranchPopulationThreshold = value; }
-    public double NormalBranchPopulationThreshold { get => normalBranchPopulationThreshold; set => normalBranchPopulationThreshold = value; }
-    public int NormalBranchTimeDelayFromHighway { get => normalBranchTimeDelayFromHighway; set => normalBranchTimeDelayFromHighway = value; }
-    public int HighwaySegmentLength { get => highwaySegmentLength; set => highwaySegmentLength = value; }
-    public int BranchSegmentLength { get => branchSegmentLength; set => branchSegmentLength = value; }
-    public int HighwayRandomAngle { get => highwayRandomAngle; set => highwayRandomAngle = value; }
-    public int DefaultRoadRandomAngle { get => defaultRoadRandomAngle; set => defaultRoadRandomAngle = value; }
-    public int MinimumIntersectionDeviation { get => minimumIntersectionDeviation; set => minimumIntersectionDeviation = value; }
-    public float RoadSnapDistance { get => roadSnapDistance; set => roadSnapDistance = value; }
-    public float MapHeight { get => mapHeight; set => mapHeight = value; }
-    public float MapWidth { get => mapWidth; set => mapWidth = value; }
-    public UnityEngine.Color HighwayColor { get => highwayColor; set => highwayColor = value; }
-    public UnityEngine.Color SecondaryRoadColor { get => secondaryRoadColor; set => secondaryRoadColor = value; }
+    //public int NumOfSteps { get => numOfSteps; set => numOfSteps = value; }
+    //public double DefaultBranchProbability { get => defaultBranchProbability; set => defaultBranchProbability = value; }
+    //public double HighwayBranchProbability { get => highwayBranchProbability; set => highwayBranchProbability = value; }
+    //public double HighwayBranchPopulationThreshold { get => highwayBranchPopulationThreshold; set => highwayBranchPopulationThreshold = value; }
+    //public double NormalBranchPopulationThreshold { get => normalBranchPopulationThreshold; set => normalBranchPopulationThreshold = value; }
+    //public int NormalBranchTimeDelayFromHighway { get => normalBranchTimeDelayFromHighway; set => normalBranchTimeDelayFromHighway = value; }
+    //public int HighwaySegmentLength { get => highwaySegmentLength; set => highwaySegmentLength = value; }
+    //public int BranchSegmentLength { get => branchSegmentLength; set => branchSegmentLength = value; }
+    //public int HighwayRandomAngle { get => highwayRandomAngle; set => highwayRandomAngle = value; }
+    //public int DefaultRoadRandomAngle { get => defaultRoadRandomAngle; set => defaultRoadRandomAngle = value; }
+    //public int MinimumIntersectionDeviation { get => minimumIntersectionDeviation; set => minimumIntersectionDeviation = value; }
+    //public float RoadSnapDistance { get => roadSnapDistance; set => roadSnapDistance = value; }
+    //public float MapHeight { get => mapHeight; set => mapHeight = value; }
+    //public float MapWidth { get => mapWidth; set => mapWidth = value; }
+    //public UnityEngine.Color HighwayColor { get => highwayColor; set => highwayColor = value; }
+    //public UnityEngine.Color SecondaryRoadColor { get => secondaryRoadColor; set => secondaryRoadColor = value; }
 
     //Rect rect = new Rect(40, 40, 10, 10);
 
@@ -109,10 +115,11 @@ public class RoadNetwork : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        SetValuesToDefault();
         //UnityEngine.Random.InitState(12345678);
         qTree = new QuadTreeRect<Road>(new RectangleF(-5000, -5000, 10000, 10000));
         //bounds = new Rect(0, 0, MapWidth, MapHeight);
-        //DrawHeatMap((int)MapWidth / heatMapScale, (int)MapHeight / heatMapScale);
+        DrawHeatMap((int)MapWidth / heatMapScale, (int)MapHeight / heatMapScale);
         primaryQueue = new List<Road>() {
             new Road() { Start = new Vector3(MapHeight/2, 0, MapWidth/2), End = new Vector3(MapHeight/2+HighwaySegmentLength, 0, MapWidth/2), Number = 0, IsHighway = true },
             new Road() { Start = new Vector3(MapHeight/2, 0, MapWidth/2), End = new Vector3(MapHeight/2-HighwaySegmentLength, 0, MapWidth/2), Number = 0, IsHighway = true, DirectionAngle = 180 }
@@ -139,9 +146,85 @@ public class RoadNetwork : MonoBehaviour
             }
         }
 
-        StartCoroutine(DrawSegments());
-        //DrawSegments();
+        //StartCoroutine(DrawSegments());
+        DrawSegments();
         Debug.Log("start end");
+    }
+
+    public void UpdateCity()
+    {
+        var NumOfStepsToDecrease = NumOfSteps;
+        DestroyAllObjects();
+        qTree = new QuadTreeRect<Road>(new RectangleF(-5000, -5000, 10000, 10000));
+        DrawHeatMap((int)MapWidth / heatMapScale, (int)MapHeight / heatMapScale);
+        primaryQueue = new List<Road>() {
+            new Road() { Start = new Vector3(MapHeight/2, 0, MapWidth/2), End = new Vector3(MapHeight/2+HighwaySegmentLength, 0, MapWidth/2), Number = 0, IsHighway = true },
+            new Road() { Start = new Vector3(MapHeight/2, 0, MapWidth/2), End = new Vector3(MapHeight/2-HighwaySegmentLength, 0, MapWidth/2), Number = 0, IsHighway = true, DirectionAngle = 180 }
+        };
+        finalSegments = new List<Road>();
+
+        while (primaryQueue.Count != 0 && NumOfStepsToDecrease != 0)
+        {
+            NumOfStepsToDecrease--;
+            Road min = primaryQueue.Aggregate((r1, r2) => r1.Number < r2.Number ? r1 : r2);
+            primaryQueue.Remove(min);
+
+            Road modified = CheckLocalConstraints(min);
+            if (modified == null)
+            {
+                continue;
+            }
+
+            AddSegment(modified, finalSegments, qTree);
+
+            foreach (Road road in GlobalGoals(modified))
+            {
+                primaryQueue.Add(new Road() { Number = min.Number + road.Number + 1, Start = road.Start, End = road.End, DirectionAngle = road.DirectionAngle, IsHighway = road.IsHighway });
+            }
+        }
+
+        DrawSegments();
+    }
+
+    public void SetValuesToDefault()
+    {
+        NumOfSteps = 3000;
+        DefaultBranchProbability = 0.3;
+        HighwayBranchProbability = 0.05;
+        HighwayBranchPopulationThreshold = 6;
+        NormalBranchPopulationThreshold = 4;
+        NormalBranchTimeDelayFromHighway = 5;
+        HighwaySegmentLength = 3;
+        BranchSegmentLength = 2;
+        HighwayRandomAngle = 15;
+        DefaultRoadRandomAngle = 3;
+        MinimumIntersectionDeviation = 30;
+        RoadSnapDistance = 1;
+        MapHeight = 200;
+        MapWidth = 200;
+        HighwayColor = UnityEngine.Color.black;
+        SecondaryRoadColor = UnityEngine.Color.red;
+    }
+
+    public void DestroyAllObjects()
+    {
+        //foreach (RoadView o in FindObjectsOfType<RoadView>())
+        //{
+        //    o = SafeDestroyGameObject(o);
+        //}
+
+        var roadsInHierarchy = FindObjectsOfType<RoadView>();
+        var planesInHierarchy = FindObjectsOfType<PlaneGenerator>();
+
+        for (int i = 0; i < roadsInHierarchy.Length; i++)
+        {
+            roadsInHierarchy[i] = SafeDestroyGameObject(roadsInHierarchy[i]);
+        }
+
+        for (int i = 0; i < planesInHierarchy.Length; i++)
+        {
+            planesInHierarchy[i] = SafeDestroyGameObject(planesInHierarchy[i]);
+        }
     }
 
     /*void OnDrawGizmos()
@@ -150,7 +233,7 @@ public class RoadNetwork : MonoBehaviour
         Gizmos.DrawWireCube(new Vector3(rect.center.x, 1, rect.center.y), new Vector3(rect.size.x, 1, rect.size.y));
     }*/
 
-    private System.Collections.IEnumerator DrawSegments()
+    private void DrawSegments()
     {
         //var intersects = qTree.GetObjects(new RectangleF(rect.min.x, rect.min.y, rect.width, rect.height));
 
@@ -179,7 +262,7 @@ public class RoadNetwork : MonoBehaviour
             //yield return new WaitForSeconds(0.2f);
             //yield return null;
         }
-        yield return null;
+        //yield return null;
 
         Debug.Log("Done");
     }
@@ -348,21 +431,9 @@ public class RoadNetwork : MonoBehaviour
 
     private void DrawHeatMap(int width, int height)
     {
-        for (int i = 0; i < width; i++)
-        {
-            for (int j = 0; j < height; j++)
-            {
-                double result = GetHeatMapAt(i,j);
-
-                Vector3 pos = new Vector3(i, -2, j);
-
-                var cube = Instantiate(heatMapField);
-                cube.transform.position = pos * heatMapScale;
-                cube.transform.localScale = new Vector3(heatMapScale, 0.1f, heatMapScale);
-                cube.GetComponent<Renderer>().material.color = new UnityEngine.Color(5 * (float)result/ 255.0f, 25.5f * (float)result/ 255.0f, 40 / 255.0f);
-            }
-        }
-
+        var plane = Instantiate(populationMapBase);
+        var planeGenerator = plane.GetComponent<PlaneGenerator>();
+        planeGenerator.Generate(width, height);
     }
 
     private Vector3 GetRotatedVectorByAngle(int angle, Vector3 inputVector)
@@ -426,5 +497,21 @@ public class RoadNetwork : MonoBehaviour
         dz = point.z - closest.z;
         
         return Math.Sqrt(dx * dx + dz * dz);
+    }
+
+    private T SafeDestroy<T>(T obj) where T : UnityEngine.Object
+    {
+        if (Application.isEditor)
+            UnityEngine.Object.DestroyImmediate(obj);
+        else
+            UnityEngine.Object.Destroy(obj);
+
+        return null;
+    }
+    private T SafeDestroyGameObject<T>(T component) where T : Component
+    {
+        if (component != null)
+            SafeDestroy(component.gameObject);
+        return null;
     }
 }
