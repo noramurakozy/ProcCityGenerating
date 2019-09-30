@@ -105,13 +105,14 @@ public class RoadNetwork : MonoBehaviour
 
     //Rect rect = new Rect(40, 40, 10, 10);
 
+    
     // Start is called before the first frame update
     void Start()
     {
         //UnityEngine.Random.InitState(12345678);
         qTree = new QuadTreeRect<Road>(new RectangleF(-5000, -5000, 10000, 10000));
         //bounds = new Rect(0, 0, MapWidth, MapHeight);
-        DrawHeatMap((int)MapWidth / heatMapScale, (int)MapHeight / heatMapScale);
+        //DrawHeatMap((int)MapWidth / heatMapScale, (int)MapHeight / heatMapScale);
         primaryQueue = new List<Road>() {
             new Road() { Start = new Vector3(MapHeight/2, 0, MapWidth/2), End = new Vector3(MapHeight/2+HighwaySegmentLength, 0, MapWidth/2), Number = 0, IsHighway = true },
             new Road() { Start = new Vector3(MapHeight/2, 0, MapWidth/2), End = new Vector3(MapHeight/2-HighwaySegmentLength, 0, MapWidth/2), Number = 0, IsHighway = true, DirectionAngle = 180 }
