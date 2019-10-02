@@ -54,43 +54,42 @@ public class RoadNetwork : MonoBehaviour
 
     //public UnityEngine.Color secondaryRoadColor = UnityEngine.Color.red;
 
-    public int NumOfSteps = 3000;
+    public int numOfSteps = 3000;
 
-    public double DefaultBranchProbability = 0.3;
+    public double defaultBranchProbability = 0.3;
 
-    public double HighwayBranchProbability = 0.05;
+    public double highwayBranchProbability = 0.05;
 
-    public double HighwayBranchPopulationThreshold = 6;
+    public double highwayBranchPopulationThreshold = 6;
 
-    public double NormalBranchPopulationThreshold = 4;
+    public double normalBranchPopulationThreshold = 4;
 
-    public int NormalBranchTimeDelayFromHighway = 5;
+    public int normalBranchTimeDelayFromHighway = 5;
 
-    public int HighwaySegmentLength = 3;
+    public int highwaySegmentLength = 3;
 
-    public int BranchSegmentLength = 2;
+    public int branchSegmentLength = 2;
 
-    public int HighwayRandomAngle = 15;
+    public int highwayRandomAngle = 15;
 
-    public int DefaultRoadRandomAngle = 3;
+    public int defaultRoadRandomAngle = 3;
 
-    public int MinimumIntersectionDeviation = 30;
+    public int minimumIntersectionDeviation = 30;
 
-    public float RoadSnapDistance = 1;
+    public float roadSnapDistance = 1;
 
-    public float MapHeight = 200;
+    public float mapHeight = 200;
 
-    public float MapWidth = 200;
+    public float mapWidth = 200;
 
-    public UnityEngine.Color HighwayColor = UnityEngine.Color.black;
+    public UnityEngine.Color highwayColor = UnityEngine.Color.black;
 
-    public UnityEngine.Color SecondaryRoadColor = UnityEngine.Color.red;
+    public UnityEngine.Color secondaryRoadColor = UnityEngine.Color.red;
 
 
     private Rect bounds;
-    public static int lastAddedTime = 0;
-
-    int heatMapScale = 1;
+    private static int lastAddedTime = 0;
+    private const int HeatMapScale = 1;
 
     //public int NumOfSteps { get => numOfSteps; set => numOfSteps = value; }
     //public double DefaultBranchProbability { get => defaultBranchProbability; set => defaultBranchProbability = value; }
@@ -113,26 +112,26 @@ public class RoadNetwork : MonoBehaviour
 
     
     // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
         SetValuesToDefault();
         //UnityEngine.Random.InitState(12345678);
         qTree = new QuadTreeRect<Road>(new RectangleF(-5000, -5000, 10000, 10000));
         //bounds = new Rect(0, 0, MapWidth, MapHeight);
-        DrawHeatMap((int)MapWidth / heatMapScale, (int)MapHeight / heatMapScale);
+        DrawHeatMap((int)mapWidth / HeatMapScale, (int)mapHeight / HeatMapScale);
         primaryQueue = new List<Road>() {
-            new Road() { Start = new Vector3(MapHeight/2, 0, MapWidth/2), End = new Vector3(MapHeight/2+HighwaySegmentLength, 0, MapWidth/2), Number = 0, IsHighway = true },
-            new Road() { Start = new Vector3(MapHeight/2, 0, MapWidth/2), End = new Vector3(MapHeight/2-HighwaySegmentLength, 0, MapWidth/2), Number = 0, IsHighway = true, DirectionAngle = 180 }
+            new Road() { Start = new Vector3(mapHeight/2, 0, mapWidth/2), End = new Vector3(mapHeight/2+highwaySegmentLength, 0, mapWidth/2), Number = 0, IsHighway = true },
+            new Road() { Start = new Vector3(mapHeight/2, 0, mapWidth/2), End = new Vector3(mapHeight/2-highwaySegmentLength, 0, mapWidth/2), Number = 0, IsHighway = true, DirectionAngle = 180 }
         };
         finalSegments = new List<Road>();
 
-        while (primaryQueue.Count != 0 && NumOfSteps != 0)
+        while (primaryQueue.Count != 0 && numOfSteps != 0)
         {
-            NumOfSteps--;
-            Road min = primaryQueue.Aggregate((r1, r2) => r1.Number < r2.Number ? r1 : r2);
+            numOfSteps--;
+            var min = primaryQueue.Aggregate((r1, r2) => r1.Number < r2.Number ? r1 : r2);
             primaryQueue.Remove(min);
 
-            Road modified = CheckLocalConstraints(min);
+            var modified = CheckLocalConstraints(min);
             if (modified == null)
             {
                 continue;
@@ -140,7 +139,7 @@ public class RoadNetwork : MonoBehaviour
 
             AddSegment(modified, finalSegments, qTree);
 
-            foreach (Road road in GlobalGoals(modified))
+            foreach (var road in GlobalGoals(modified))
             {
                 primaryQueue.Add(new Road() { Number = min.Number + road.Number + 1, Start = road.Start, End = road.End, DirectionAngle = road.DirectionAngle, IsHighway = road.IsHighway });
             }
@@ -153,23 +152,23 @@ public class RoadNetwork : MonoBehaviour
 
     public void UpdateCity()
     {
-        var NumOfStepsToDecrease = NumOfSteps;
+        var numOfStepsToDecrease = numOfSteps;
         DestroyAllObjects();
         qTree = new QuadTreeRect<Road>(new RectangleF(-5000, -5000, 10000, 10000));
-        DrawHeatMap((int)MapWidth / heatMapScale, (int)MapHeight / heatMapScale);
+        DrawHeatMap((int)mapWidth / HeatMapScale, (int)mapHeight / HeatMapScale);
         primaryQueue = new List<Road>() {
-            new Road() { Start = new Vector3(MapHeight/2, 0, MapWidth/2), End = new Vector3(MapHeight/2+HighwaySegmentLength, 0, MapWidth/2), Number = 0, IsHighway = true },
-            new Road() { Start = new Vector3(MapHeight/2, 0, MapWidth/2), End = new Vector3(MapHeight/2-HighwaySegmentLength, 0, MapWidth/2), Number = 0, IsHighway = true, DirectionAngle = 180 }
+            new Road() { Start = new Vector3(mapHeight/2, 0, mapWidth/2), End = new Vector3(mapHeight/2+highwaySegmentLength, 0, mapWidth/2), Number = 0, IsHighway = true },
+            new Road() { Start = new Vector3(mapHeight/2, 0, mapWidth/2), End = new Vector3(mapHeight/2-highwaySegmentLength, 0, mapWidth/2), Number = 0, IsHighway = true, DirectionAngle = 180 }
         };
         finalSegments = new List<Road>();
 
-        while (primaryQueue.Count != 0 && NumOfStepsToDecrease != 0)
+        while (primaryQueue.Count != 0 && numOfStepsToDecrease != 0)
         {
-            NumOfStepsToDecrease--;
-            Road min = primaryQueue.Aggregate((r1, r2) => r1.Number < r2.Number ? r1 : r2);
+            numOfStepsToDecrease--;
+            var min = primaryQueue.Aggregate((r1, r2) => r1.Number < r2.Number ? r1 : r2);
             primaryQueue.Remove(min);
 
-            Road modified = CheckLocalConstraints(min);
+            var modified = CheckLocalConstraints(min);
             if (modified == null)
             {
                 continue;
@@ -188,25 +187,25 @@ public class RoadNetwork : MonoBehaviour
 
     public void SetValuesToDefault()
     {
-        NumOfSteps = 3000;
-        DefaultBranchProbability = 0.3;
-        HighwayBranchProbability = 0.05;
-        HighwayBranchPopulationThreshold = 6;
-        NormalBranchPopulationThreshold = 4;
-        NormalBranchTimeDelayFromHighway = 5;
-        HighwaySegmentLength = 3;
-        BranchSegmentLength = 2;
-        HighwayRandomAngle = 15;
-        DefaultRoadRandomAngle = 3;
-        MinimumIntersectionDeviation = 30;
-        RoadSnapDistance = 1;
-        MapHeight = 200;
-        MapWidth = 200;
-        HighwayColor = UnityEngine.Color.black;
-        SecondaryRoadColor = UnityEngine.Color.red;
+        numOfSteps = 3000;
+        defaultBranchProbability = 0.3;
+        highwayBranchProbability = 0.05;
+        highwayBranchPopulationThreshold = 6;
+        normalBranchPopulationThreshold = 4;
+        normalBranchTimeDelayFromHighway = 5;
+        highwaySegmentLength = 3;
+        branchSegmentLength = 2;
+        highwayRandomAngle = 15;
+        defaultRoadRandomAngle = 3;
+        minimumIntersectionDeviation = 30;
+        roadSnapDistance = 1;
+        mapHeight = 200;
+        mapWidth = 200;
+        highwayColor = UnityEngine.Color.black;
+        secondaryRoadColor = UnityEngine.Color.red;
     }
 
-    public void DestroyAllObjects()
+    private void DestroyAllObjects()
     {
         //foreach (RoadView o in FindObjectsOfType<RoadView>())
         //{
@@ -216,12 +215,12 @@ public class RoadNetwork : MonoBehaviour
         var roadsInHierarchy = FindObjectsOfType<RoadView>();
         var planesInHierarchy = FindObjectsOfType<PlaneGenerator>();
 
-        for (int i = 0; i < roadsInHierarchy.Length; i++)
+        for (var i = 0; i < roadsInHierarchy.Length; i++)
         {
             roadsInHierarchy[i] = SafeDestroyGameObject(roadsInHierarchy[i]);
         }
 
-        for (int i = 0; i < planesInHierarchy.Length; i++)
+        for (var i = 0; i < planesInHierarchy.Length; i++)
         {
             planesInHierarchy[i] = SafeDestroyGameObject(planesInHierarchy[i]);
         }
@@ -246,17 +245,17 @@ public class RoadNetwork : MonoBehaviour
             var roadView = Instantiate(roadViewPrefab);
             roadView.Road = road;
 
-            road.color = SecondaryRoadColor;
+            road.Color = secondaryRoadColor;
 
             if (road.IsHighway)
             {
-                roadView.GetComponent<LineRenderer>().endColor = HighwayColor;
-                roadView.GetComponent<LineRenderer>().startColor = HighwayColor;
+                roadView.GetComponent<LineRenderer>().endColor = highwayColor;
+                roadView.GetComponent<LineRenderer>().startColor = highwayColor;
             }
             else
             {
-                roadView.GetComponent<LineRenderer>().endColor = roadView.road.color;
-                roadView.GetComponent<LineRenderer>().startColor = roadView.road.color;
+                roadView.GetComponent<LineRenderer>().endColor = roadView.road.Color;
+                roadView.GetComponent<LineRenderer>().startColor = roadView.road.Color;
             }
             roadView.Draw();
             //yield return new WaitForSeconds(0.2f);
@@ -272,7 +271,7 @@ public class RoadNetwork : MonoBehaviour
         foreach (var otherSegment in qTree.GetObjects(r.Rectangle))
         {
             //snap to crossing
-            if (Vector3.Distance(r.End, otherSegment.End) < RoadSnapDistance)
+            if (Vector3.Distance(r.End, otherSegment.End) < roadSnapDistance)
             {
                 r.End = otherSegment.End;
 
@@ -311,7 +310,7 @@ public class RoadNetwork : MonoBehaviour
         }
         
         //check intersections
-        foreach (Road segment in finalSegments)
+        foreach (var segment in finalSegments)
         {
             if (LineSegmentsIntersect(r.Start, r.End, segment.Start, segment.End)
                 || CheckSegmentsEndPointsDistance(r.Start, segment.Start, r.End, segment.End))
@@ -325,77 +324,77 @@ public class RoadNetwork : MonoBehaviour
 
     private List<Road> GlobalGoals(Road previousRoad)
     {
-        List<Road> newRoads = new List<Road>();
+        var newRoads = new List<Road>();
 
-        Road straightRoad = Road.RoadWithDirection(previousRoad.End, previousRoad.DirectionAngle, previousRoad.Length, 0, previousRoad.IsHighway);
+        var straightRoad = Road.RoadWithDirection(previousRoad.End, previousRoad.DirectionAngle, previousRoad.Length, 0, previousRoad.IsHighway);
         var straightPopulation = GetHeatMapAt(straightRoad.End.x, straightRoad.End.z);
 
         if (previousRoad.IsHighway)
-         {
-            var angle = previousRoad.DirectionAngle + UnityEngine.Random.Range(-HighwayRandomAngle, HighwayRandomAngle);
-            Road randomAngleRoad = Road.RoadWithDirection(previousRoad.End, angle, previousRoad.Length, 0, previousRoad.IsHighway);
+        {
+            var angle = previousRoad.DirectionAngle + UnityEngine.Random.Range(-highwayRandomAngle, highwayRandomAngle);
+            var randomAngleRoad = Road.RoadWithDirection(previousRoad.End, angle, previousRoad.Length, 0, previousRoad.IsHighway);
 
             var randomRoadPopulation = GetHeatMapAt(randomAngleRoad.End.x, randomAngleRoad.End.z);
 
-            double roadPopluation;
+            double roadPopulation;
 
             //highway continues
             if (randomRoadPopulation > straightPopulation)
             {
                 newRoads.Add(randomAngleRoad);
-                roadPopluation = randomRoadPopulation;
-                randomAngleRoad.Population = (float)roadPopluation;
+                roadPopulation = randomRoadPopulation;
+                randomAngleRoad.Population = (float)roadPopulation;
             }
             else
             {
                 newRoads.Add(straightRoad);
-                roadPopluation = straightPopulation;
-                straightRoad.Population = (float)roadPopluation;
+                roadPopulation = straightPopulation;
+                straightRoad.Population = (float)roadPopulation;
             }
 
             //highway from highway
-            if (roadPopluation > HighwayBranchPopulationThreshold)
+            if (roadPopulation > highwayBranchPopulationThreshold)
             {
-                if (UnityEngine.Random.value < HighwayBranchProbability)
+                if (UnityEngine.Random.value < highwayBranchProbability)
                 {
-                    float leftAngle = previousRoad.DirectionAngle - 90 + UnityEngine.Random.Range(-DefaultRoadRandomAngle, DefaultRoadRandomAngle);
-                    var leftHighwayBranch = Road.RoadWithDirection(previousRoad.End, leftAngle, HighwaySegmentLength, 0, previousRoad.IsHighway);
+                    var leftAngle = previousRoad.DirectionAngle - 90 + UnityEngine.Random.Range(-defaultRoadRandomAngle, defaultRoadRandomAngle);
+                    var leftHighwayBranch = Road.RoadWithDirection(previousRoad.End, leftAngle, highwaySegmentLength, 0, previousRoad.IsHighway);
                     newRoads.Add(leftHighwayBranch);
                 }
-                else if (UnityEngine.Random.value < HighwayBranchProbability)
+                else if (UnityEngine.Random.value < highwayBranchProbability)
                 {
-                    float rightAngle = previousRoad.DirectionAngle + 90 + UnityEngine.Random.Range(-DefaultRoadRandomAngle, DefaultRoadRandomAngle);
-                    var rightHighwayBranch = Road.RoadWithDirection(previousRoad.End, rightAngle, HighwaySegmentLength, 0, previousRoad.IsHighway);
+                    var rightAngle = previousRoad.DirectionAngle + 90 + UnityEngine.Random.Range(-defaultRoadRandomAngle, defaultRoadRandomAngle);
+                    var rightHighwayBranch = Road.RoadWithDirection(previousRoad.End, rightAngle, highwaySegmentLength, 0, previousRoad.IsHighway);
                     newRoads.Add(rightHighwayBranch);
                 }
             } 
         }
-        else if (straightPopulation > NormalBranchPopulationThreshold)
+        else if (straightPopulation > normalBranchPopulationThreshold)
         {
             //Debug.Log("straightpop: " + straightPopulation);
             newRoads.Add(straightRoad);
         }
 
         //secondary road branching 
-        if (straightPopulation > NormalBranchPopulationThreshold)
+        if (straightPopulation > normalBranchPopulationThreshold)
         {
-            int timeDelay = 0;
+            var timeDelay = 0;
             if (previousRoad.IsHighway)
             {
-                timeDelay = NormalBranchTimeDelayFromHighway;
+                timeDelay = normalBranchTimeDelayFromHighway;
             }
 
-            if (UnityEngine.Random.value < DefaultBranchProbability)
+            if (UnityEngine.Random.value < defaultBranchProbability)
             {
-                float leftAngle = previousRoad.DirectionAngle - 90 + UnityEngine.Random.Range(-DefaultRoadRandomAngle, DefaultRoadRandomAngle);
-                var leftBranch = Road.RoadWithDirection(previousRoad.End, leftAngle, BranchSegmentLength, timeDelay, false);
+                var leftAngle = previousRoad.DirectionAngle - 90 + UnityEngine.Random.Range(-defaultRoadRandomAngle, defaultRoadRandomAngle);
+                var leftBranch = Road.RoadWithDirection(previousRoad.End, leftAngle, branchSegmentLength, timeDelay, false);
                 //Debug.Log("pop when branching 1: " + straightPopulation);
                 newRoads.Add(leftBranch);
             }
-            else if (UnityEngine.Random.value < DefaultBranchProbability)
+            else if (UnityEngine.Random.value < defaultBranchProbability)
             {
-                float rightAngle = previousRoad.DirectionAngle + 90 + UnityEngine.Random.Range(-DefaultRoadRandomAngle, DefaultRoadRandomAngle);
-                var rightBranch = Road.RoadWithDirection(previousRoad.End, rightAngle, BranchSegmentLength, timeDelay, false);
+                var rightAngle = previousRoad.DirectionAngle + 90 + UnityEngine.Random.Range(-defaultRoadRandomAngle, defaultRoadRandomAngle);
+                var rightBranch = Road.RoadWithDirection(previousRoad.End, rightAngle, branchSegmentLength, timeDelay, false);
                 //Debug.Log("pop when branching 2: " + straightPopulation);
                 newRoads.Add(rightBranch);
             }  
@@ -407,24 +406,24 @@ public class RoadNetwork : MonoBehaviour
 
     private bool CheckSegmentsEndPointsDistance(Vector3 start1, Vector3 start2, Vector3 end1, Vector3 end2)
     {
-        return (Vector3.Distance(start1, start2) <= RoadSnapDistance && Vector3.Distance(end1, end2) <= RoadSnapDistance || Vector3.Distance(start1, end2) <= RoadSnapDistance && Vector3.Distance(start2, end1) <= RoadSnapDistance);
+        return (Vector3.Distance(start1, start2) <= roadSnapDistance && Vector3.Distance(end1, end2) <= roadSnapDistance || Vector3.Distance(start1, end2) <= roadSnapDistance && Vector3.Distance(start2, end1) <= roadSnapDistance);
     }
-    private void AddSegment(Road segment, List<Road> segments, QuadTreeRect<Road> quadTree)
+    private static void AddSegment(Road segment, List<Road> segments, QuadTreeRect<Road> quadTree)
     {
         segments.Add(segment);
         quadTree.Add(segment);
         lastAddedTime++;
-        segment.AddedToQtreeTime = lastAddedTime;
+        segment.addedToQtreeTime = lastAddedTime;
     }
 
-    private float MinDegreeDifference(float firstDeg, float secDeg)
+    private static float MinDegreeDifference(float firstDeg, float secDeg)
     {
         //-92,-271
         var diff = Math.Abs(firstDeg - secDeg) % 180.0f;
         return Math.Min(diff, Math.Abs(diff - 180.0f));
     }
 
-    private double GetHeatMapAt(float i, float j)
+    private static double GetHeatMapAt(float i, float j)
     {
         return (Mathf.PerlinNoise(i / 30f, j / 30f) * 8);
     }
@@ -441,9 +440,9 @@ public class RoadNetwork : MonoBehaviour
         return Quaternion.Euler(0, angle, 0) * inputVector;
     }
 
-    private bool LineSegmentsIntersect(Vector3 lineOneA, Vector3 lineOneB, Vector3 lineTwoA, Vector3 lineTwoB)
+    private static bool LineSegmentsIntersect(Vector3 lineOneA, Vector3 lineOneB, Vector3 lineTwoA, Vector3 lineTwoB)
     {
-        bool ret = false;
+        var ret = false;
         if (!(lineOneA == lineTwoA || lineOneA == lineTwoB || lineOneB == lineTwoA || lineOneB == lineTwoB))
         {
             ret = (((lineTwoB.z - lineOneA.z) * (lineTwoA.x - lineOneA.x) > (lineTwoA.z - lineOneA.z) * (lineTwoB.x - lineOneA.x))
@@ -457,25 +456,25 @@ public class RoadNetwork : MonoBehaviour
     private Vector3? LineIntersect(Vector3 lineOneA, Vector3 lineOneB, Vector3 lineTwoA, Vector3 lineTwoB)
     {
         //Line1: A1x + B1y = C1
-        float A1 = lineOneB.z - lineOneA.z;
-        float B1 = lineOneB.x - lineOneA.x;
-        float C1 = A1 * lineOneA.x + B1 * lineOneA.z;
+        var a1 = lineOneB.z - lineOneA.z;
+        var b1 = lineOneB.x - lineOneA.x;
+        var c1 = a1 * lineOneA.x + b1 * lineOneA.z;
 
         //Line2: A2x + B2y = C2
-        float A2 = lineTwoB.z - lineTwoA.z;
-        float B2 = lineTwoB.x - lineTwoA.x;
-        float C2 = A2 * lineTwoA.x + B2 * lineTwoA.z;
+        var a2 = lineTwoB.z - lineTwoA.z;
+        var b2 = lineTwoB.x - lineTwoA.x;
+        var c2 = a2 * lineTwoA.x + b2 * lineTwoA.z;
 
-        float delta = A1 * B2 - A2 * B1;
+        var delta = a1 * b2 - a2 * b1;
 
-        if (delta == 0)
+        if (Math.Abs(delta) < 0.000001)
         {
             //throw new ArgumentException("Lines are parallel");
             return null;
         }
 
-        float x = (B2 * C1 - B1 * C2) / delta;
-        float z = (A1 * C2 - A2 * C1) / delta;
+        var x = (b2 * c1 - b1 * c2) / delta;
+        var z = (a1 * c2 - a2 * c1) / delta;
 
         return new Vector3(x, 0, z);
 
@@ -485,8 +484,8 @@ public class RoadNetwork : MonoBehaviour
     // point pt and the segment p1 --> p2.
     private double FindDistanceToSegment(Vector3 point, Vector3 segmentStart, Vector3 segmentEnd, out float t, out Vector3 closest)
     {
-        float dx = segmentEnd.x - segmentStart.x;
-        float dz = segmentEnd.z - segmentStart.z;
+        var dx = segmentEnd.x - segmentStart.x;
+        var dz = segmentEnd.z - segmentStart.z;
 
         // Calculate the t that minimizes the distance.
         t = ((point.x - segmentStart.x) * dx + (point.z - segmentStart.z) * dz) /
@@ -499,16 +498,16 @@ public class RoadNetwork : MonoBehaviour
         return Math.Sqrt(dx * dx + dz * dz);
     }
 
-    private T SafeDestroy<T>(T obj) where T : UnityEngine.Object
+    private static T SafeDestroy<T>(T obj) where T : UnityEngine.Object
     {
         if (Application.isEditor)
-            UnityEngine.Object.DestroyImmediate(obj);
+            DestroyImmediate(obj);
         else
-            UnityEngine.Object.Destroy(obj);
+            Destroy(obj);
 
         return null;
     }
-    private T SafeDestroyGameObject<T>(T component) where T : Component
+    private static T SafeDestroyGameObject<T>(T component) where T : Component
     {
         if (component != null)
             SafeDestroy(component.gameObject);

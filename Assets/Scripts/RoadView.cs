@@ -17,13 +17,13 @@ public class RoadView : MonoBehaviour
         Line.SetPosition(1, Road.End);
     }
 
-    void OnDrawGizmos()
+    private void OnDrawGizmos()
     {
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireCube(new Vector3(road.Bounds.center.x, 1, road.Bounds.center.y), new Vector3(road.Bounds.size.x, 1, road.Bounds.size.y));
     }
 
-    void Awake()
+    private void Awake()
     {
         Line = GetComponent<LineRenderer>();
     }

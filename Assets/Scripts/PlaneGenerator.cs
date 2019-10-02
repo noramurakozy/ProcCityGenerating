@@ -28,7 +28,7 @@ public class PlaneGenerator : MonoBehaviour
         var uv = new Vector2[(xSize + 1) * (zSize + 1)];
         for (int i = 0, y = 0; y <= zSize; y++)
         {
-            for (int x = 0; x <= xSize; x++, i++)
+            for (var x = 0; x <= xSize; x++, i++)
             {
                 vertices[i] = new Vector3(x, 0, y);
                 uv[i] = new Vector2((float) x / xSize, (float) y / zSize);
@@ -37,10 +37,10 @@ public class PlaneGenerator : MonoBehaviour
         mesh.vertices = vertices;
         mesh.uv = uv;
 
-        int[] triangles = new int[xSize * zSize * 6];
+        var triangles = new int[xSize * zSize * 6];
         for (int ti = 0, vi = 0, y = 0; y < zSize; y++, vi++)
         {
-            for (int x = 0; x < xSize; x++, ti += 6, vi++)
+            for (var x = 0; x < xSize; x++, ti += 6, vi++)
             {
                 triangles[ti] = vi;
                 triangles[ti + 3] = triangles[ti + 2] = vi + 1;
@@ -52,9 +52,9 @@ public class PlaneGenerator : MonoBehaviour
         var colors = new Color[(zSize + 1) * (xSize + 1)];
         for (int i = 0, y = 0; y <= zSize; y++)
         {
-            for (int x = 0; x <= xSize; x++)
+            for (var x = 0; x <= xSize; x++)
             {
-                double result = GetHeatMapAt(x,y);
+                var result = GetHeatMapAt(x,y);
                 colors[i++] = new UnityEngine.Color(5 * (float)result / 255.0f, 40f * (float)result / 255.0f, 40 / 255.0f);
             }
         }
@@ -62,21 +62,21 @@ public class PlaneGenerator : MonoBehaviour
         transform.position = new Vector3(0, -2, 0);
     }
 
-    private double GetHeatMapAt(float i, float j)
+    private static double GetHeatMapAt(float i, float j)
     {
         return (Mathf.PerlinNoise(i / 30f, j / 30f) * 8);
     }
 
     private Color[] DrawHeatMap(int width, int height)
     {
-        int k = 0;
+        var k = 0;
         var colors = new Color[(width + 1) * (height + 1)];
-        for (int i = 0; i < width; i++)
+        for (var i = 0; i < width; i++)
         {
-            for (int j = 0; j < height; j++)
+            for (var j = 0; j < height; j++)
             {
-                double result = GetHeatMapAt(i, j);
-                colors[k++] = new UnityEngine.Color(5 * (float)result / 255.0f, 25.5f * (float)result / 255.0f, 40 / 255.0f);
+                var result = GetHeatMapAt(i, j);
+                colors[k++] = new Color(5 * (float)result / 255.0f, 25.5f * (float)result / 255.0f, 40 / 255.0f);
             }
         }
         return colors;

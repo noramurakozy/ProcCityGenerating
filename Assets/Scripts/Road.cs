@@ -11,32 +11,22 @@ public class Road : IRectQuadStorable
 {
     public Vector3 Start { get; set; }
     public Vector3 End { get; set; }
-    public float DirectionAngle; //{ get; set; }
+    public float DirectionAngle { get; set; }
     public int Number { get; set; }
-    public float Length { get => (End - Start).magnitude; }
+    public float Length => (End - Start).magnitude;
     public bool IsHighway { get; set; }
     public float Population { get; set; }
-    public UnityEngine.Color color { get; set; } = UnityEngine.Color.red;
+    public UnityEngine.Color Color { get; set; } = UnityEngine.Color.red;
 
-    public int AddedToQtreeTime;
+    public int addedToQtreeTime;
     //Quadtree
-    public RectangleF Rectangle
-    {
-        get
-        {
-            return new RectangleF(Bounds.x, Bounds.y, Bounds.width, Bounds.height);
-        }
-    }
+    public RectangleF Rectangle => new RectangleF(Bounds.x, Bounds.y, Bounds.width, Bounds.height);
 
     public RectangleF StartRectangle
     {
         get
         {
-            var r = new Rect();
-            r.width = 0.5f;
-            r.height = 0.5f;
-            r.center = new Vector2(Start.x, Start.z);
-
+            var r = new Rect {width = 0.5f, height = 0.5f, center = new Vector2(Start.x, Start.z)};
             return new RectangleF(r.x, r.y, r.width, r.height);
         }
     }
@@ -44,10 +34,12 @@ public class Road : IRectQuadStorable
     public Rect Bounds {
         get
         {
-            var r = new Rect();
-            r.width = Math.Abs(End.x - Start.x);
-            r.height = Math.Abs(End.z - Start.z);
-            r.center = new Vector2((Start.x + End.x)/2, (Start.z+End.z)/2);
+            var r = new Rect
+            {
+                width = Math.Abs(End.x - Start.x),
+                height = Math.Abs(End.z - Start.z),
+                center = new Vector2((Start.x + End.x) / 2, (Start.z + End.z) / 2)
+            };
             return r;
         }
     }
