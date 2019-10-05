@@ -26,22 +26,30 @@ namespace Editor
 
             roadNetwork.branchSegmentLength = EditorGUILayout.IntSlider("Branch segment length", roadNetwork.branchSegmentLength, 1, 10);
 
-            roadNetwork.highwayRandomAngle = EditorGUILayout.IntSlider("Highway random angle", roadNetwork.highwayRandomAngle, 1, 360);
+            roadNetwork.highwayRandomAngle = EditorGUILayout.IntSlider("Highway random angle", roadNetwork.highwayRandomAngle, -90, 90);
 
-            roadNetwork.defaultRoadRandomAngle = EditorGUILayout.IntSlider("Default road random angle", roadNetwork.defaultRoadRandomAngle, 1, 360);
+            roadNetwork.defaultRoadRandomAngle = EditorGUILayout.IntSlider("Default road random angle", roadNetwork.defaultRoadRandomAngle, -90, 90);
 
-            roadNetwork.minimumIntersectionDeviation = EditorGUILayout.IntSlider("Minimum intersection deviation", roadNetwork.minimumIntersectionDeviation, 1, 360);
+            roadNetwork.minimumIntersectionDeviation = EditorGUILayout.IntSlider("Minimum intersection deviation", roadNetwork.minimumIntersectionDeviation, -90, 90);
 
-            roadNetwork.roadSnapDistance = EditorGUILayout.Slider("Road snap distance", roadNetwork.roadSnapDistance, 1, 5);
+            roadNetwork.roadSnapDistance = EditorGUILayout.Slider("Road snap distance", roadNetwork.roadSnapDistance, 0, 3);
 
             roadNetwork.mapHeight = EditorGUILayout.Slider("Map height", roadNetwork.mapHeight, 10, 500);
 
             roadNetwork.mapWidth = EditorGUILayout.Slider("Map width", roadNetwork.mapWidth, 10, 500);
 
+            roadNetwork.maxCrossingNumber = EditorGUILayout.IntSlider("Max number of roads in crossing", roadNetwork.maxCrossingNumber, 2, 4);
+
             roadNetwork.highwayColor = EditorGUILayout.ColorField("Highway color", roadNetwork.highwayColor);
 
             roadNetwork.secondaryRoadColor = EditorGUILayout.ColorField("Secondary road color", roadNetwork.secondaryRoadColor);
-
+    
+            GUILayout.BeginHorizontal();
+            RoadNetwork.MinBaseAngle = EditorGUILayout.FloatField("Random base angle range", RoadNetwork.MinBaseAngle);
+            EditorGUILayout.MinMaxSlider(ref RoadNetwork.MinBaseAngle, ref RoadNetwork.MaxBaseAngle, -90f, 90f, null);
+            RoadNetwork.MaxBaseAngle = EditorGUILayout.FloatField(RoadNetwork.MaxBaseAngle);
+            GUILayout.EndHorizontal();
+            
             GUILayout.BeginHorizontal();
 
             if (GUILayout.Button("Update city"))
@@ -51,7 +59,7 @@ namespace Editor
 
             if (GUILayout.Button("Reset values"))
             {
-                roadNetwork.SetValuesToDefault();
+                roadNetwork.ResetValuesToDefault();
             }
 
             GUILayout.EndHorizontal();

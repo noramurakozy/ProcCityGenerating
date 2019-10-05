@@ -30,6 +30,21 @@ public class Road : IRectQuadStorable
             return new RectangleF(r.x, r.y, r.width, r.height);
         }
     }
+    
+    public RectangleF EndRectangle
+    {
+        get
+        {
+            var r = new Rect {width = 0.5f, height = 0.5f, center = new Vector2(End.x, End.z)};
+            return new RectangleF(r.x, r.y, r.width, r.height);
+        }
+    }
+    
+    public Vector3 GetStartRectangleCenter()
+    {
+        return new Vector3(StartRectangle.X + StartRectangle.Width / 2,
+            1,StartRectangle.Y + StartRectangle.Height / 2);
+    }
 
     public Rect Bounds {
         get
