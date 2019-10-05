@@ -70,7 +70,7 @@ public class RoadNetwork : MonoBehaviour
     // Start is called before the first frame update
     private void Start()
     {
-        ResetValuesToDefault();
+        //ResetValuesToDefault();
         //UnityEngine.Random.InitState(12345678);
         qTree = new QuadTreeRect<Road>(new RectangleF(-5000, -5000, 10000, 10000));
         //bounds = new Rect(0, 0, MapWidth, MapHeight);
@@ -168,11 +168,6 @@ public class RoadNetwork : MonoBehaviour
 
     private void DestroyAllObjects()
     {
-        //foreach (RoadView o in FindObjectsOfType<RoadView>())
-        //{
-        //    o = SafeDestroyGameObject(o);
-        //}
-
         var roadsInHierarchy = FindObjectsOfType<RoadView>();
         var planesInHierarchy = FindObjectsOfType<PlaneGenerator>();
 
@@ -206,9 +201,9 @@ public class RoadNetwork : MonoBehaviour
             var roadView = Instantiate(roadViewPrefab);
             roadView.Road = road;
 
-            //road.Color = secondaryRoadColor;
+            road.Color = secondaryRoadColor;
 
-            /*if (road.IsHighway)
+            if (road.IsHighway)
             {
                 roadView.GetComponent<LineRenderer>().endColor = highwayColor;
                 roadView.GetComponent<LineRenderer>().startColor = highwayColor;
@@ -217,7 +212,7 @@ public class RoadNetwork : MonoBehaviour
             {
                 roadView.GetComponent<LineRenderer>().endColor = roadView.road.Color;
                 roadView.GetComponent<LineRenderer>().startColor = roadView.road.Color;
-            }*/
+            }
             roadView.Draw();
             //yield return new WaitForSeconds(0.2f);
             //yield return null;
@@ -229,33 +224,11 @@ public class RoadNetwork : MonoBehaviour
 
     private Road CheckLocalConstraints(Road r)
     {
-        foreach (var otherSegment in qTree.GetObjects(r.Rectangle))
+        if (CheckConstraintsOnNeighbours(ref r, r.Rectangle) 
+            || CheckConstraintsOnNeighbours(ref r, r.StartRectangle)
+            || CheckConstraintsOnNeighbours(ref r, r.EndRectangle))
         {
-            //snap to crossing
-            SnapToCrossing(ref r, otherSegment);
-
-            //check if it's still fits after the end was updated
-            foreach (var item in qTree.GetObjects(r.Rectangle))
-            {
-                //2. condition is in order to not filter \/ <-- this kind of roads, just these: ||
-                if (MinDegreeDifference(r.DirectionAngle, item.DirectionAngle) <= 10 && SegmentsAreAlmostParallel(r.Start, item.Start, r.End, item.End))
-                {
-                    return null;
-                }
-            }
-                
-            //snap to crossing if the roads are like |--
-            /*if (FindDistanceToSegment(r.End, otherSegment.Start, otherSegment.End, out _, out _) < roadSnapDistance || FindDistanceToSegment(r.Start, otherSegment.Start, otherSegment.End, out _, out _) < roadSnapDistance)
-            {
-                //r.End = Vector3.Distance(r.End, otherSegment.Start) < Vector3.Distance(r.End, otherSegment.End) ? otherSegment.Start : otherSegment.End;
-                //return r;
-                if (!r.End.Equals(otherSegment.End) && !r.End.Equals(otherSegment.Start) && !r.Start.Equals(otherSegment.Start) && !r.Start.Equals(otherSegment.End))
-                {
-                    r.Color = UnityEngine.Color.magenta;
-                    otherSegment.Color = UnityEngine.Color.white;
-                }
-            }*/
-
+            return null;
         }
 
         //check if more than x roads are in the crossing
@@ -274,6 +247,28 @@ public class RoadNetwork : MonoBehaviour
             }
         }
         return r;
+    }
+
+    private bool CheckConstraintsOnNeighbours(ref Road r, RectangleF area)
+    {
+        foreach (var otherSegment in qTree.GetObjects(area))
+        {
+            //snap to crossing
+            SnapToCrossing(ref r, otherSegment);
+
+            //check if it's still fits after the end was updated
+            foreach (var item in qTree.GetObjects(area))
+            {
+                //2. condition is in order to not filter \/ <-- this kind of roads, just these: ||
+                if (MinDegreeDifference(r.DirectionAngle, item.DirectionAngle) <= 10 &&
+                    SegmentsAreAlmostParallel(r.Start, item.Start, r.End, item.End))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private void SnapToCrossing(ref Road road1, Road road2)
