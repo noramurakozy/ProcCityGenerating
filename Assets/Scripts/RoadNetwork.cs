@@ -46,7 +46,7 @@ public class RoadNetwork : MonoBehaviour
 
     public int minimumIntersectionDeviation = 30;
 
-    public float roadSnapDistance = 1;
+    public static float RoadSnapDistance = 1;
 
     public float mapHeight = 200;
 
@@ -155,7 +155,7 @@ public class RoadNetwork : MonoBehaviour
         highwayRandomAngle = 15;
         defaultRoadRandomAngle = 3;
         minimumIntersectionDeviation = 30;
-        roadSnapDistance = 1;
+        RoadSnapDistance = 1;
         mapHeight = 200;
         mapWidth = 200;
         highwayColor = UnityEngine.Color.black;
@@ -224,9 +224,7 @@ public class RoadNetwork : MonoBehaviour
 
     private Road CheckLocalConstraints(Road r)
     {
-        if (CheckConstraintsOnNeighbours(ref r, r.Rectangle) 
-            || CheckConstraintsOnNeighbours(ref r, r.StartRectangle)
-            || CheckConstraintsOnNeighbours(ref r, r.EndRectangle))
+        if (CheckConstraintsOnNeighbours(ref r, r.Rectangle))
         {
             return null;
         }
@@ -238,14 +236,15 @@ public class RoadNetwork : MonoBehaviour
         }
         
         //check intersections
-        foreach (var segment in finalSegments)
+        /*foreach (var segment in finalSegments)
         {
             if (LineSegmentsIntersect(r.Start, r.End, segment.Start, segment.End)
                 || SegmentsAreAlmostParallel(r.Start, segment.Start, r.End, segment.End))
             {
                 return null;
             }
-        }
+        }*/
+
         return r;
     }
 
@@ -292,11 +291,37 @@ public class RoadNetwork : MonoBehaviour
         {
             road1.End = road2.Start;
         }
+        
+        //snap to crossing if the roads are like |--
+        if (PointsAreDifferent(road1.Start, road1.End, road2.Start, road2.End))
+        {
+            if (FindDistanceToSegment(road1.End, road2.Start, road2.End, out _, out var closestPoint) < RoadSnapDistance)
+            {
+                Debug.Log("End close:" + FindDistanceToSegment(road1.End, road2.Start, road2.End, out _, out _));
+                road1.End = Vector3.Distance(road1.End, road2.Start) < Vector3.Distance(road1.End, road2.End) ? road2.Start : road2.End;
+                //road1.End = closestPoint;
+            }
+
+            if (FindDistanceToSegment(road1.Start, road2.Start, road2.End, out _, out closestPoint) < RoadSnapDistance)
+            {
+                Debug.Log("Start close:" + FindDistanceToSegment(road1.Start, road2.Start, road2.End, out _, out _));
+                road1.Start = Vector3.Distance(road1.Start, road2.Start) < Vector3.Distance(road1.Start, road2.End) ? road2.Start : road2.End;
+                //road1.Start = closestPoint;
+            }
+        }
+    }
+
+    private bool PointsAreDifferent(Vector3 road1Start, Vector3 road1End, Vector3 road2Start, Vector3 road2End)
+    {
+        return !road1Start.Equals(road2Start)
+               && !road1Start.Equals(road2End)
+               && !road1End.Equals(road2Start)
+               && !road1End.Equals(road2End);
     }
 
     private bool ReachMaxCrossingNumber(Road r)
     {
-        var pointsInCrossing = qTree.GetObjects(r.StartRectangle).Count + qTree.GetObjects(r.EndRectangle).Count;
+        var pointsInCrossing = qTree.GetObjects(r.Rectangle).Count;
         return pointsInCrossing >= maxCrossingNumber;
     }
 
@@ -393,22 +418,22 @@ public class RoadNetwork : MonoBehaviour
 
     private bool Start2End1AreClose(Vector3 start2, Vector3 end1)
     {
-        return Vector3.Distance(start2, end1) <= roadSnapDistance;
+        return Vector3.Distance(start2, end1) <= RoadSnapDistance;
     }
 
     private bool Start1End2AreClose(Vector3 start1, Vector3 end2)
     {
-        return Vector3.Distance(start1, end2) <= roadSnapDistance;
+        return Vector3.Distance(start1, end2) <= RoadSnapDistance;
     }
 
     private bool EndsAreClose(Vector3 end1, Vector3 end2)
     {
-        return Vector3.Distance(end1, end2) <= roadSnapDistance;
+        return Vector3.Distance(end1, end2) <= RoadSnapDistance;
     }
 
     private bool StartsAreClose(Vector3 start1, Vector3 start2)
     {
-        return Vector3.Distance(start1, start2) <= roadSnapDistance;
+        return Vector3.Distance(start1, start2) <= RoadSnapDistance;
     }
 
     private static void AddSegment(Road segment, List<Road> segments, QuadTreeRect<Road> quadTree)

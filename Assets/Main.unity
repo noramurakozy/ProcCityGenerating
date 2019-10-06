@@ -147,22 +147,23 @@ MonoBehaviour:
     type: 3}
   populationMapBase: {fileID: 8377332092807723986, guid: d6beb6350a1b977409c5a649e2b57720,
     type: 3}
-  NumOfSteps: 3000
-  DefaultBranchProbability: 0.30000001192092896
-  HighwayBranchProbability: 0.05000000074505806
-  HighwayBranchPopulationThreshold: 6
-  NormalBranchPopulationThreshold: 4
-  NormalBranchTimeDelayFromHighway: 5
-  HighwaySegmentLength: 3
-  BranchSegmentLength: 2
-  HighwayRandomAngle: 15
-  DefaultRoadRandomAngle: 3
-  MinimumIntersectionDeviation: 30
-  RoadSnapDistance: 1
-  MapHeight: 200
-  MapWidth: 200
-  HighwayColor: {r: 0, g: 0, b: 0, a: 1}
-  SecondaryRoadColor: {r: 1, g: 0, b: 0, a: 1}
+  numOfSteps: 1
+  defaultBranchProbability: 0.30000001192092896
+  highwayBranchProbability: 0.05000000074505806
+  highwayBranchPopulationThreshold: 6
+  normalBranchPopulationThreshold: 3
+  normalBranchTimeDelayFromHighway: 5
+  highwaySegmentLength: 2
+  branchSegmentLength: 2
+  highwayRandomAngle: 1
+  defaultRoadRandomAngle: 0
+  normalBranchBaseAngle: 90
+  minimumIntersectionDeviation: 30
+  mapHeight: 200
+  mapWidth: 200
+  maxCrossingNumber: 4
+  highwayColor: {r: 0, g: 0, b: 0, a: 1}
+  secondaryRoadColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!4 &111381106
 Transform:
   m_ObjectHideFlags: 0

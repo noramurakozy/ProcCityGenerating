@@ -32,7 +32,7 @@ namespace Editor
 
             roadNetwork.minimumIntersectionDeviation = EditorGUILayout.IntSlider("Minimum intersection deviation", roadNetwork.minimumIntersectionDeviation, -90, 90);
 
-            roadNetwork.roadSnapDistance = EditorGUILayout.Slider("Road snap distance", roadNetwork.roadSnapDistance, 0, 3);
+            RoadNetwork.RoadSnapDistance = EditorGUILayout.Slider("Road snap distance", RoadNetwork.RoadSnapDistance, 0, 3);
 
             roadNetwork.mapHeight = EditorGUILayout.Slider("Map height", roadNetwork.mapHeight, 10, 500);
 

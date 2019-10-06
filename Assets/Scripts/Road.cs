@@ -51,8 +51,8 @@ public class Road : IRectQuadStorable
         {
             var r = new Rect
             {
-                width = Math.Abs(End.x - Start.x),
-                height = Math.Abs(End.z - Start.z),
+                width = Math.Abs(End.x - Start.x) + RoadNetwork.RoadSnapDistance,
+                height = Math.Abs(End.z - Start.z) + RoadNetwork.RoadSnapDistance,
                 center = new Vector2((Start.x + End.x) / 2, (Start.z + End.z) / 2)
             };
             return r;
