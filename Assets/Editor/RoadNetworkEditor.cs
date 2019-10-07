@@ -10,7 +10,7 @@ namespace Editor
         {
             var roadNetwork = (RoadNetwork)target;
 
-            roadNetwork.numOfSteps = EditorGUILayout.IntSlider("Number of steps", roadNetwork.numOfSteps, 1, 4000);
+            roadNetwork.numOfSteps = EditorGUILayout.IntSlider("Number of steps", roadNetwork.numOfSteps, 1, 30000);
 
             roadNetwork.defaultBranchProbability = EditorGUILayout.Slider("Default branch probability", (float)roadNetwork.defaultBranchProbability, 0, 1);
 
@@ -29,9 +29,7 @@ namespace Editor
             roadNetwork.highwayRandomAngle = EditorGUILayout.IntSlider("Highway random angle", roadNetwork.highwayRandomAngle, -90, 90);
 
             roadNetwork.defaultRoadRandomAngle = EditorGUILayout.IntSlider("Default road random angle", roadNetwork.defaultRoadRandomAngle, -90, 90);
-
-            roadNetwork.minimumIntersectionDeviation = EditorGUILayout.IntSlider("Minimum intersection deviation", roadNetwork.minimumIntersectionDeviation, -90, 90);
-
+            
             RoadNetwork.RoadSnapDistance = EditorGUILayout.Slider("Road snap distance", RoadNetwork.RoadSnapDistance, 0, 3);
 
             roadNetwork.mapHeight = EditorGUILayout.Slider("Map height", roadNetwork.mapHeight, 10, 500);
@@ -39,6 +37,9 @@ namespace Editor
             roadNetwork.mapWidth = EditorGUILayout.Slider("Map width", roadNetwork.mapWidth, 10, 500);
 
             roadNetwork.maxCrossingNumber = EditorGUILayout.IntSlider("Max number of roads in crossing", roadNetwork.maxCrossingNumber, 2, 4);
+
+            roadNetwork.modernCityStructureExtent = EditorGUILayout.IntSlider("Modern city percentage",
+                roadNetwork.modernCityStructureExtent, 0, 100);
 
             roadNetwork.highwayColor = EditorGUILayout.ColorField("Highway color", roadNetwork.highwayColor);
 

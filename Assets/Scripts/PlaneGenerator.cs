@@ -6,18 +6,18 @@ public class PlaneGenerator : MonoBehaviour
 {
     private Vector3[] vertices;
 
-    //private void OnDrawGizmos()
-    //{
-    //    if (vertices == null)
-    //    {
-    //        return;
-    //    }
-    //    Gizmos.color = Color.black;
-    //    for (int i = 0; i < vertices.Length; i++)
-    //    {
-    //        Gizmos.DrawSphere(vertices[i], 0.1f);
-    //    }
-    //}
+    /*private void OnDrawGizmos()
+    {
+        if (vertices == null)
+        {
+            return;
+        }
+        Gizmos.color = Color.black;
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            Gizmos.DrawSphere(vertices[i], 0.1f);
+        }
+    }*/
 
     public void Generate(int xSize, int zSize)
     {
@@ -55,16 +55,17 @@ public class PlaneGenerator : MonoBehaviour
             for (var x = 0; x <= xSize; x++)
             {
                 var result = GetHeatMapAt(x,y);
-                colors[i++] = new UnityEngine.Color(5 * (float)result / 255.0f, 40f * (float)result / 255.0f, 40 / 255.0f);
+                colors[i++] = new Color(5 * (float)result / 255.0f, 40f * (float)result / 255.0f, 40 / 255.0f);
             }
         }
         mesh.colors = colors;
         transform.position = new Vector3(0, -2, 0);
     }
 
-    private static double GetHeatMapAt(float i, float j)
+    public static double GetHeatMapAt(float i, float j)
     {
-        return (Mathf.PerlinNoise(i / 30f, j / 30f) * 8);
+        //return (Mathf.PerlinNoise(i / 30f, j / 30f) * 8);
+        return Mathf.PerlinNoise(i / 60f, j / 60f) * 10;
     }
 
     private Color[] DrawHeatMap(int width, int height)

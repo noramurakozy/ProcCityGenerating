@@ -143,27 +143,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   roadViewPrefab: {fileID: 1759862877381276388, guid: 7b2df4b844b69bb44967139c2c9d6ac7,
     type: 3}
-  heatMapField: {fileID: 7979273921155070986, guid: 0e63cc6369de07c4fbe03a5a1494235e,
-    type: 3}
   populationMapBase: {fileID: 8377332092807723986, guid: d6beb6350a1b977409c5a649e2b57720,
     type: 3}
-  numOfSteps: 1
+  numOfSteps: 3000
   defaultBranchProbability: 0.30000001192092896
   highwayBranchProbability: 0.05000000074505806
   highwayBranchPopulationThreshold: 6
-  normalBranchPopulationThreshold: 3
+  normalBranchPopulationThreshold: 4
   normalBranchTimeDelayFromHighway: 5
-  highwaySegmentLength: 2
+  highwaySegmentLength: 3
   branchSegmentLength: 2
-  highwayRandomAngle: 1
-  defaultRoadRandomAngle: 0
-  normalBranchBaseAngle: 90
-  minimumIntersectionDeviation: 30
+  highwayRandomAngle: 15
+  defaultRoadRandomAngle: 3
+  normalBranchBaseAngle: 86.71452
   mapHeight: 200
   mapWidth: 200
   maxCrossingNumber: 4
   highwayColor: {r: 0, g: 0, b: 0, a: 1}
   secondaryRoadColor: {r: 1, g: 0, b: 0, a: 1}
+  modernCityStructureExtent: 0
 --- !u!4 &111381106
 Transform:
   m_ObjectHideFlags: 0
