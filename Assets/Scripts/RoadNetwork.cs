@@ -105,7 +105,7 @@ public class RoadNetwork : MonoBehaviour
 
     public void UpdateCity()
     {
-        UnityEngine.Random.InitState(12345678);
+        //UnityEngine.Random.InitState(12345678);
         var numOfStepsToDecrease = numOfSteps;
         DestroyAllObjects();
         qTree = new QuadTreeRect<Road>(new RectangleF(-5000, -5000, 10000, 10000));
@@ -125,7 +125,7 @@ public class RoadNetwork : MonoBehaviour
             else
             {
                 //Debug.Log(numOfStepsToDecrease);
-                //ResetValuesToDefault();
+                SetValuesToOldTown();
             }
             var min = primaryQueue.Aggregate((r1, r2) => r1.Number < r2.Number ? r1 : r2);
             primaryQueue.Remove(min);
@@ -146,6 +146,15 @@ public class RoadNetwork : MonoBehaviour
         }
         //StartCoroutine(DrawSegments());
         DrawSegments();
+    }
+
+    private void SetValuesToOldTown()
+    {
+        highwayRandomAngle = 15;
+        defaultRoadRandomAngle = 3;
+        RoadSnapDistance = 1;
+        MinBaseAngle = 80;
+        normalBranchPopulationThreshold = 5;
     }
 
     private void SetValuesToModern()
