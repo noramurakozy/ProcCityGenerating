@@ -19,6 +19,8 @@ namespace Editor
             roadNetwork.highwayBranchPopulationThreshold = EditorGUILayout.Slider("Highway branch population threshold", (float)roadNetwork.highwayBranchPopulationThreshold, 1, 10);
 
             roadNetwork.normalBranchPopulationThreshold = EditorGUILayout.Slider("Normal branch population threshold", (float)roadNetwork.normalBranchPopulationThreshold, 1, 10);
+            
+            roadNetwork.switchToOldTownThreshold = EditorGUILayout.Slider("Switch to old town threshold", (float)roadNetwork.switchToOldTownThreshold, 0, 8);
 
             roadNetwork.normalBranchTimeDelayFromHighway = EditorGUILayout.IntSlider("Normal branch time delay from highway", roadNetwork.normalBranchTimeDelayFromHighway, 1, 10);
 
