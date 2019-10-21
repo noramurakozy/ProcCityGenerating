@@ -2,10 +2,12 @@
 using QuadTrees;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using UnityEngine;
 using Color = UnityEngine.Color;
+using Debug = UnityEngine.Debug;
 
 public class RoadNetwork : MonoBehaviour
 {
@@ -30,7 +32,8 @@ public class RoadNetwork : MonoBehaviour
     public double highwayBranchPopulationThreshold = 6;
 
     public double normalBranchPopulationThreshold = 4;
-    public double switchToOldTownThreshold = 5;
+    
+    public double switchToOldTownThreshold = 4;
 
     public int normalBranchTimeDelayFromHighway = 5;
 
@@ -52,12 +55,10 @@ public class RoadNetwork : MonoBehaviour
     
     public int maxCrossingNumber = 4;
 
-    public UnityEngine.Color highwayColor = UnityEngine.Color.black;
+    public Color highwayColor = Color.black;
 
-    public UnityEngine.Color secondaryRoadColor = UnityEngine.Color.red;
-
-
-    private Rect bounds;
+    public Color secondaryRoadColor = Color.red;
+    
     private static int lastAddedTime = 0;
     public static float MinBaseAngle = 80;
     public static float MaxBaseAngle = 90;
@@ -66,74 +67,20 @@ public class RoadNetwork : MonoBehaviour
     private float modernRoadSteps;
     private float oldTownRoadSteps;
 
-    //Rect rect = new Rect(40, 40, 10, 10);
-
-    // Start is called before the first frame update
-    /*private void Start()
-    {
-        //ResetValuesToDefault();
-        //UnityEngine.Random.InitState(12345678);
-        qTree = new QuadTreeRect<Road>(new RectangleF(-5000, -5000, 10000, 10000));
-        //bounds = new Rect(0, 0, MapWidth, MapHeight);
-        DrawMap((int)mapWidth / HeatMapScale, (int)mapHeight / HeatMapScale, PlaneType.Population);
-        primaryQueue = new List<Road>() {
-            new Road() { Start = new Vector3(mapHeight/2, 0, mapWidth/2), End = new Vector3(mapHeight/2+highwaySegmentLength, 0, mapWidth/2), Number = 0, IsHighway = true },
-            new Road() { Start = new Vector3(mapHeight/2, 0, mapWidth/2), End = new Vector3(mapHeight/2-highwaySegmentLength, 0, mapWidth/2), Number = 0, IsHighway = true, DirectionAngle = 180 }
-        };
-        finalSegments = new List<Road>();
-
-        while (primaryQueue.Count != 0 && numOfSteps != 0)
-        {
-            numOfSteps--;
-            var min = primaryQueue.Aggregate((r1, r2) => r1.Number < r2.Number ? r1 : r2);
-            primaryQueue.Remove(min);
-
-            var modified = CheckLocalConstraints(min);
-            if (modified == null)
-            {
-                continue;
-            }
-
-            AddSegment(modified, finalSegments, qTree);
-
-            foreach (var road in GlobalGoals(modified))
-            {
-                primaryQueue.Add(new Road() { Number = min.Number + road.Number + 1, Start = road.Start, End = road.End, DirectionAngle = road.DirectionAngle, IsHighway = road.IsHighway });
-            }
-        }
-
-        //StartCoroutine(DrawSegments());
-        DrawSegments();
-        Debug.Log("start end");
-    }*/
-
     public void UpdateCity()
     {
         oldTownRoadSteps = numOfSteps - (numOfSteps * (modernCityStructureExtent / 100f));
         modernRoadSteps = numOfSteps - oldTownRoadSteps;
-        UnityEngine.Random.InitState(12345678);
+        //UnityEngine.Random.InitState(12345678);
+        switchToOldTownThreshold = oldTownRoadSteps.Equals(numOfSteps) ? 8 : 4;
         var numOfStepsToDecrease = numOfSteps;
         roadCounters = new[] {0, 0};
         DestroyAllObjects();
         qTree = new QuadTreeRect<Road>(new RectangleF(-5000, -5000, 10000, 10000));
         DrawMap((int) mapWidth / HeatMapScale, (int) mapHeight / HeatMapScale, PlaneType.Population);
-        //DrawMap((int)mapWidth / HeatMapScale, (int)mapHeight / HeatMapScale, PlaneType.District);
+        //DrawMap((int) mapWidth / HeatMapScale, (int) mapHeight / HeatMapScale, PlaneType.District);
         var startRoadType = oldTownRoadSteps > numOfSteps / 2f ? RoadType.OldTown : RoadType.Modern;
-        primaryQueue = new List<Road>()
-        {
-            new Road()
-            {
-                Start = new Vector3(mapHeight / 2, 0, mapWidth / 2),
-                End = new Vector3(mapHeight / 2 + highwaySegmentLength, 0, mapWidth / 2), Number = 0, IsHighway = true,
-                Type = startRoadType
-            },
-            new Road()
-            {
-                Start = new Vector3(mapHeight / 2, 0, mapWidth / 2),
-                End = new Vector3(mapHeight / 2 - highwaySegmentLength, 0, mapWidth / 2), Number = 0, IsHighway = true,
-                DirectionAngle = 180, Type = startRoadType
-            }
-        };
+        primaryQueue = GetInitialRoads(startRoadType);
         finalSegments = new List<Road>();
 
         while (primaryQueue.Count != 0 && numOfStepsToDecrease != 0)
@@ -146,17 +93,48 @@ public class RoadNetwork : MonoBehaviour
             {
                 continue;
             }
-
             AddSegment(modified, finalSegments, qTree);
             numOfStepsToDecrease--;
-
+            
             foreach (Road road in GlobalGoals(modified))
             {
-                primaryQueue.Add(new Road() { Number = min.Number + road.Number + 1, Start = road.Start, End = road.End, DirectionAngle = road.DirectionAngle, IsHighway = road.IsHighway, Color = road.Color, Type = road.Type });
+                primaryQueue.Add(new Road()
+                {
+                    Number = min.Number + road.Number + 1, 
+                    Start = road.Start, 
+                    End = road.End, 
+                    DirectionAngle = road.DirectionAngle, 
+                    IsHighway = road.IsHighway, 
+                    Color = road.Color, 
+                    Type = road.Type
+                });
             }
         }
-        //StartCoroutine(DrawSegments());
         DrawSegments();
+    }
+
+    private List<Road> GetInitialRoads(RoadType startRoadType)
+    {
+        return new List<Road>()
+        {
+            new Road()
+            {
+                Start = new Vector3(mapHeight / 2, 0, mapWidth / 2),
+                End = new Vector3(mapHeight / 2 + highwaySegmentLength, 0, mapWidth / 2), 
+                Number = 0, 
+                IsHighway = true,
+                Type = startRoadType
+            },
+            new Road()
+            {
+                Start = new Vector3(mapHeight / 2, 0, mapWidth / 2),
+                End = new Vector3(mapHeight / 2 - highwaySegmentLength, 0, mapWidth / 2), 
+                Number = 0, 
+                IsHighway = true,
+                DirectionAngle = 180, 
+                Type = startRoadType
+            }
+        };
     }
 
     private void SetValuesToOldTown()
@@ -199,21 +177,16 @@ public class RoadNetwork : MonoBehaviour
         normalBranchBaseAngle = 90;
         maxCrossingNumber = 4;
         modernCityStructureExtent = 0;
-        switchToOldTownThreshold = 5;
+        switchToOldTownThreshold = 4;
     }
 
     private void DestroyAllObjects()
     {
-        //var roadsInHierarchy = FindObjectsOfType<RoadView>();
         //plane.gameobjectre kell
         var planesInHierarchy = FindObjectsOfType<PlaneGenerator>();
         var roads = GameObject.Find("Roads");
-
-        /*for (var i = 0; i < roadsInHierarchy.Length; i++)
-        {
-            roadsInHierarchy[i] = SafeDestroyGameObject(roadsInHierarchy[i]);
-        }*/
-        //futtatas kozben nem jo
+        
+        //futtatas kozben nem lesz jo
         SafeDestroy(roads);
 
         for (var i = 0; i < planesInHierarchy.Length; i++)
@@ -222,20 +195,8 @@ public class RoadNetwork : MonoBehaviour
         }
     }
 
-    /*void OnDrawGizmos()
-    {
-        Gizmos.color = UnityEngine.Color.green;
-        Gizmos.DrawWireCube(new Vector3(rect.center.x, 1, rect.center.y), new Vector3(rect.size.x, 1, rect.size.y));
-    }*/
-    
     private void DrawSegments()
     {
-        //var intersects = qTree.GetObjects(new RectangleF(rect.min.x, rect.min.y, rect.width, rect.height));
-
-        /*foreach (var item in intersects)
-        {
-            item.color = UnityEngine.Color.white;
-        }*/
         var roadsParent = new GameObject("Roads");
         foreach (var road in finalSegments)
         {
@@ -243,6 +204,7 @@ public class RoadNetwork : MonoBehaviour
             roadView.Road = road;
 
             //road.Color = secondaryRoadColor;
+            road.Color = road.Type.Equals(RoadType.Modern) ? Color.yellow : Color.cyan;
 
             if (road.IsHighway)
             {
@@ -255,10 +217,7 @@ public class RoadNetwork : MonoBehaviour
                 roadView.GetComponent<LineRenderer>().startColor = roadView.road.Color;
             }
             roadView.Draw();
-            //yield return new WaitForSeconds(0.02f);
-            //yield return null;
         }
-        //yield return null;
         Debug.Log("Old: " + roadCounters[(int)RoadType.OldTown]);
         Debug.Log("Modern: " + roadCounters[(int)RoadType.Modern]);
         Debug.Log("Done");
@@ -340,18 +299,14 @@ public class RoadNetwork : MonoBehaviour
         //snap to crossing if the roads are like |--
         if (PointsAreDifferent(road1.Start, road1.End, road2.Start, road2.End))
         {
-            if (FindDistanceToSegment(road1.End, road2.Start, road2.End, out _, out var closestPoint) < RoadSnapDistance)
+            if (FindDistanceToSegment(road1.End, road2.Start, road2.End, out _, out _) < RoadSnapDistance)
             {
-                //Debug.Log("End close:" + FindDistanceToSegment(road1.End, road2.Start, road2.End, out _, out _));
                 road1.End = Vector3.Distance(road1.End, road2.Start) < Vector3.Distance(road1.End, road2.End) ? road2.Start : road2.End;
-                //road1.End = closestPoint;
             }
-
-            if (FindDistanceToSegment(road1.Start, road2.Start, road2.End, out _, out closestPoint) < RoadSnapDistance)
+            
+            if (FindDistanceToSegment(road1.Start, road2.Start, road2.End, out _, out _) < RoadSnapDistance)
             {
-                //Debug.Log("Start close:" + FindDistanceToSegment(road1.Start, road2.Start, road2.End, out _, out _));
                 road1.Start = Vector3.Distance(road1.Start, road2.Start) < Vector3.Distance(road1.Start, road2.End) ? road2.Start : road2.End;
-                //road1.Start = closestPoint;
             }
         }
     }
@@ -378,15 +333,15 @@ public class RoadNetwork : MonoBehaviour
         var straightRoad = Road.RoadWithDirection(previousRoad.End, previousRoad.DirectionAngle, previousRoad.Length, 0, previousRoad.IsHighway);
         var straightPopulation = PlaneGenerator.GetHeatMapAt(straightRoad.End.x, straightRoad.End.z, PlaneType.Population);
         var districtValue = PlaneGenerator.GetHeatMapAt(straightRoad.End.x, straightRoad.End.z, PlaneType.District);
-        if (districtValue > switchToOldTownThreshold
-            && Mathf.Approximately(oldTownRoadSteps, 0f)
+        if (districtValue < switchToOldTownThreshold
+            && !Mathf.Approximately(oldTownRoadSteps, 0f)
             && roadCounters[(int)RoadType.OldTown] < oldTownRoadSteps)
         {
             SetValuesToOldTown();
             roadType = RoadType.OldTown;
             
         }
-        else if (Mathf.Approximately(modernRoadSteps, 0f)
+        else if (!Mathf.Approximately(modernRoadSteps, 0f)
                 && roadCounters[(int) RoadType.Modern] < modernRoadSteps)
         {
             SetValuesToModern();
@@ -507,12 +462,10 @@ public class RoadNetwork : MonoBehaviour
         quadTree.Add(segment);
         lastAddedTime++;
         segment.addedToQtreeTime = lastAddedTime;
-        Debug.Log("Road type " + segment.Type);
     }
 
     private static float MinDegreeDifference(float firstDeg, float secDeg)
     {
-        //-92,-271
         var diff = Math.Abs(firstDeg - secDeg) % 180.0f;
         return Math.Min(diff, Math.Abs(diff - 180.0f));
     }
@@ -558,7 +511,7 @@ public class RoadNetwork : MonoBehaviour
 
         if (Math.Abs(delta) < 0.000001)
         {
-            //throw new ArgumentException("Lines are parallel");
+            // Lines are parallel
             return null;
         }
 

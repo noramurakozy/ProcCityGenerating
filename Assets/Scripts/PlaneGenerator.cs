@@ -70,7 +70,7 @@ public class PlaneGenerator : MonoBehaviour
             case PlaneType.Population:
                 return Mathf.PerlinNoise(i / 60f, j / 60f) * 10;
             case PlaneType.District:
-                return Mathf.PerlinNoise(i / 45f, j / 45f) * 10;
+                return Mathf.PerlinNoise(i / 35f+10, j / 35f+10) * 10;
             default:
                 return Mathf.PerlinNoise(i / 60f, j / 60f) * 10;
         }
