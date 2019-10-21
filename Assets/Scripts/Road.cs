@@ -21,10 +21,14 @@ public class Road : IRectQuadStorable
     public RoadType Type { get; set; }
 
     public int addedToQtreeTime;
+    
+    // TODO: somehow get from RoadNetworkDescriptor
+    private float roadSnapDistance = 1;
+
     //Quadtree
     public RectangleF Rectangle => new RectangleF(Bounds.x, Bounds.y, Bounds.width, Bounds.height);
 
-    public RectangleF StartRectangle
+    private RectangleF StartRectangle
     {
         get
         {
@@ -53,8 +57,8 @@ public class Road : IRectQuadStorable
         {
             var r = new Rect
             {
-                width = Math.Abs(End.x - Start.x) + RoadNetwork.RoadSnapDistance,
-                height = Math.Abs(End.z - Start.z) + RoadNetwork.RoadSnapDistance,
+                width = Math.Abs(End.x - Start.x) + roadSnapDistance,
+                height = Math.Abs(End.z - Start.z) + roadSnapDistance,
                 center = new Vector2((Start.x + End.x) / 2, (Start.z + End.z) / 2)
             };
             return r;
