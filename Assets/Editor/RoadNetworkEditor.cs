@@ -61,11 +61,6 @@ namespace Editor
                 roadNetwork.UpdateCity();
             }
 
-            if (GUILayout.Button("Reset values"))
-            {
-                descriptor.Reset();
-            }
-
             GUILayout.EndHorizontal();
         }
     }

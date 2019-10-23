@@ -40,36 +40,11 @@ public class RoadNetworkDescriptor
 
     public Color secondaryRoadColor = Color.red;
     
-    public float minBaseAngle = 80;
+    public float minBaseAngle = 90;
     public float maxBaseAngle = 90;
     public int modernCityStructureExtent = 0;
     public int heatMapScale = 1;
-    
-    public void Reset()
-    {
-        numOfSteps = 3000;
-        defaultBranchProbability = 0.3;
-        highwayBranchProbability = 0.05;
-        highwayBranchPopulationThreshold = 6;
-        normalBranchPopulationThreshold = 4;
-        normalBranchTimeDelayFromHighway = 5;
-        highwaySegmentLength = 3;
-        branchSegmentLength = 2;
-        highwayRandomAngle = 15;
-        defaultRoadRandomAngle = 3;
-        roadSnapDistance = 1;
-        mapHeight = 200;
-        mapWidth = 200;
-        highwayColor = UnityEngine.Color.black;
-        secondaryRoadColor = UnityEngine.Color.red;
-        minBaseAngle = 80;
-        maxBaseAngle = 90;
-        normalBranchBaseAngle = 90;
-        maxCrossingNumber = 4;
-        modernCityStructureExtent = 0;
-        switchToOldTownThreshold = 4;
-    }
-    
+
     public void SetValuesToOldTown()
     {
         highwayRandomAngle = 15;
