@@ -297,18 +297,21 @@ public class RoadNetwork : MonoBehaviour
                     var leftAngle = previousRoad.DirectionAngle - descriptor.normalBranchBaseAngle + UnityEngine.Random.Range(-descriptor.defaultRoadRandomAngle, descriptor.defaultRoadRandomAngle);
                     var leftHighwayBranch = Road.RoadWithDirection(previousRoad.End, leftAngle, descriptor.highwaySegmentLength, 0, previousRoad.IsHighway);
                     newRoads.Add(leftHighwayBranch);
+                    previousRoad.NextRoad = leftHighwayBranch;
                 }
                 else if (UnityEngine.Random.value < descriptor.highwayBranchProbability)
                 {
                     var rightAngle = previousRoad.DirectionAngle + descriptor.normalBranchBaseAngle + UnityEngine.Random.Range(-descriptor.defaultRoadRandomAngle, descriptor.defaultRoadRandomAngle);
                     var rightHighwayBranch = Road.RoadWithDirection(previousRoad.End, rightAngle, descriptor.highwaySegmentLength, 0, previousRoad.IsHighway);
                     newRoads.Add(rightHighwayBranch);
+                    previousRoad.NextRoad = rightHighwayBranch;
                 }
             } 
         }
         else if (straightPopulation > descriptor.normalBranchPopulationThreshold)
         {
             newRoads.Add(straightRoad);
+            previousRoad.NextRoad = straightRoad;
         }
 
         //secondary road branching 
@@ -327,6 +330,7 @@ public class RoadNetwork : MonoBehaviour
                 var leftBranch =
                     Road.RoadWithDirection(previousRoad.End, leftAngle, descriptor.branchSegmentLength, timeDelay, false);
                 newRoads.Add(leftBranch);
+                previousRoad.NextRoad = leftBranch;
             }
             else if (UnityEngine.Random.value < descriptor.defaultBranchProbability)
             {
@@ -335,6 +339,7 @@ public class RoadNetwork : MonoBehaviour
                 var rightBranch =
                     Road.RoadWithDirection(previousRoad.End, rightAngle, descriptor.branchSegmentLength, timeDelay, false);
                 newRoads.Add(rightBranch);
+                previousRoad.NextRoad = rightBranch;
             }
         }
 
