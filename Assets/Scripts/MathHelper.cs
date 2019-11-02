@@ -61,4 +61,30 @@ public class MathHelper
     {
         return Vector3.Distance(point1, point2) <= distance;
     }
+    
+    private Vector3? LineIntersect(Vector3 lineOneA, Vector3 lineOneB, Vector3 lineTwoA, Vector3 lineTwoB)
+    {
+        //Line1: A1x + B1y = C1
+        var a1 = lineOneB.z - lineOneA.z;
+        var b1 = lineOneB.x - lineOneA.x;
+        var c1 = a1 * lineOneA.x + b1 * lineOneA.z;
+
+        //Line2: A2x + B2y = C2
+        var a2 = lineTwoB.z - lineTwoA.z;
+        var b2 = lineTwoB.x - lineTwoA.x;
+        var c2 = a2 * lineTwoA.x + b2 * lineTwoA.z;
+
+        var delta = a1 * b2 - a2 * b1;
+
+        if (Math.Abs(delta) < 0.000001)
+        {
+            //throw new ArgumentException("Lines are parallel");
+            return null;
+        }
+
+        var x = (b2 * c1 - b1 * c2) / delta;
+        var z = (a1 * c2 - a2 * c1) / delta;
+
+        return new Vector3(x, 0, z);
+    }
 }

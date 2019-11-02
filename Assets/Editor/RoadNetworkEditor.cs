@@ -53,15 +53,16 @@ namespace Editor
             EditorGUILayout.MinMaxSlider(ref descriptor.minBaseAngle, ref descriptor.maxBaseAngle, -90f, 90f, null);
             descriptor.maxBaseAngle = EditorGUILayout.FloatField(descriptor.maxBaseAngle);
             GUILayout.EndHorizontal();
-            
-            GUILayout.BeginHorizontal();
 
             if (GUILayout.Button("Update city"))
             {
                 roadNetwork.UpdateCity();
             }
 
-            GUILayout.EndHorizontal();
+            if (GUILayout.Button("Generate textured city (caution)"))
+            {
+                roadNetwork.GenerateTexturedCity();
+            }
         }
     }
 }

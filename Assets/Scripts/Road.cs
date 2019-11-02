@@ -18,6 +18,8 @@ public class Road : IRectQuadStorable
     public float Population { get; set; }
     public UnityEngine.Color Color { get; set; } = UnityEngine.Color.red;
 
+    public Road NextRoad { get; set; }
+
     public RoadType Type { get; set; }
 
     public int addedToQtreeTime;

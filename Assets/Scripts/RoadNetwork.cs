@@ -23,6 +23,9 @@ public class RoadNetwork : MonoBehaviour
     [SerializeField]
     private GameObject populationMapBase;
     
+    [SerializeField]
+    private Terrain terrain;
+
     public RoadNetworkDescriptor descriptor;
     
     private static int lastAddedTime;
@@ -276,12 +279,14 @@ public class RoadNetwork : MonoBehaviour
                 newRoads.Add(randomAngleRoad);
                 roadPopulation = randomRoadPopulation;
                 randomAngleRoad.Population = (float)roadPopulation;
+                previousRoad.NextRoad = randomAngleRoad;
             }
             else
             {
                 newRoads.Add(straightRoad);
                 roadPopulation = straightPopulation;
                 straightRoad.Population = (float)roadPopulation;
+                previousRoad.NextRoad = straightRoad;
             }
             
             //highway from highway
@@ -351,5 +356,86 @@ public class RoadNetwork : MonoBehaviour
         var plane = Instantiate(populationMapBase);
         var planeGenerator = plane.GetComponent<PlaneGenerator>();
         planeGenerator.Generate(width, height, planeType);
+    }
+
+    public void GenerateTexturedCity()
+    {
+//        var terrain = Instantiate(this.terrain);
+//        var roadArchitectSystem = Instantiate(this.roadArchitectSystem);
+//        var gsdSplineC = roadArchitectSystem.AddRoad().GetComponent<GSDRoad>().GSDSpline;
+//        gsdSplineC.mNodes.Add(new GSDSplineN());
+//        var points = finalSegments.Select(road => road.End).ToList();
+//        points.Insert(0, new Vector3(100,0,100));
+//        gameObject.GetComponent<Roadifier>().GenerateRoad(points, Terrain.activeTerrain);
+//        DestroyAllObjects();
+
+        var points = new List<Vector3>();
+        var roadsToTexture = new List<Road>(finalSegments);
+        var lastRoad = roadsToTexture.Last();
+        points.Add(lastRoad.End);
+        points.Add(lastRoad.Start);
+        roadsToTexture.Remove(lastRoad);
+        var startRoad = GetInitialRoads(RoadType.OldTown)[0];
+        var startRoad2 = GetInitialRoads(RoadType.OldTown)[1];
+        var prevRoad = roadsToTexture.Find(road => road.End.Equals(lastRoad.Start));
+        // just to stop the possible infinite loops
+        int counter = 0;
+        while (prevRoad != null || counter >= 100)
+        {
+            points.Add(prevRoad.Start);
+            //Debug.Log("Counter " + counter++);
+            roadsToTexture.Remove(prevRoad);
+            prevRoad = roadsToTexture.Find(road => road.End.Equals(prevRoad.Start));
+        }
+        
+        var points2 = new List<Vector3>();
+        var firstRoad = roadsToTexture.First();
+        points2.Add(firstRoad.Start);
+        points2.Add(firstRoad.End);
+        roadsToTexture.Remove(firstRoad);
+        var nextRoad2 = roadsToTexture.Find(road => road.Start.Equals(firstRoad.End));
+        // just to stop the possible infinite loop
+        int counter2 = 0;
+        while (nextRoad2 != null || counter2 >= 100)
+        {
+            points2.Add(nextRoad2.End);
+            //Debug.Log("Counter " + counter2++);
+            roadsToTexture.Remove(nextRoad2);
+            nextRoad2 = roadsToTexture.Find(road => road.Start.Equals(nextRoad2.End));
+        }
+        gameObject.GetComponent<Roadifier>().GenerateRoad(points, Terrain.activeTerrain);
+        gameObject.GetComponent<Roadifier>().GenerateRoad(points2, Terrain.activeTerrain);
+        
+        CombineMeshes();
+    }
+
+    private void CombineMeshes()
+    {
+        MeshFilter[] meshFilters = GetComponentsInChildren<MeshFilter>();
+        CombineInstance[] combine = new CombineInstance[meshFilters.Length];
+        
+        Debug.Log(name + " is combining " + meshFilters.Length + "meshes!");
+        
+        int i = 0;
+        while (i < meshFilters.Length)
+        {
+            combine[i].subMeshIndex = 0;
+            combine[i].mesh = meshFilters[i].sharedMesh;
+            combine[i].transform = meshFilters[i].transform.localToWorldMatrix;
+            meshFilters[i].gameObject.SetActive(false);
+            //Debug.Log(combine[i].mesh.name);
+
+            i++;
+        }
+
+        Mesh finalMesh = new Mesh();
+        finalMesh.CombineMeshes(combine, true);
+        GetComponent<MeshFilter>().sharedMesh = finalMesh;
+        transform.gameObject.SetActive(true);
+    }
+    
+    private void OnDrawGizmos()
+    {
+        Gizmos.DrawWireMesh(GetComponent<MeshFilter>().sharedMesh);
     }
 }
