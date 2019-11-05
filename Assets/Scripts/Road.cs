@@ -17,8 +17,8 @@ public class Road : IRectQuadStorable
     public bool IsHighway { get; set; }
     public float Population { get; set; }
     public UnityEngine.Color Color { get; set; } = UnityEngine.Color.red;
-
     public Road NextRoad { get; set; }
+    public Road PrevRoad { get; set; }
 
     public RoadType Type { get; set; }
 

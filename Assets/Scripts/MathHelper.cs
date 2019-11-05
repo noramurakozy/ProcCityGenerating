@@ -62,7 +62,7 @@ public class MathHelper
         return Vector3.Distance(point1, point2) <= distance;
     }
     
-    private Vector3? LineIntersect(Vector3 lineOneA, Vector3 lineOneB, Vector3 lineTwoA, Vector3 lineTwoB)
+    public static Vector3? LineIntersect(Vector3 lineOneA, Vector3 lineOneB, Vector3 lineTwoA, Vector3 lineTwoB)
     {
         //Line1: A1x + B1y = C1
         var a1 = lineOneB.z - lineOneA.z;

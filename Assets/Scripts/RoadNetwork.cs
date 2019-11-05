@@ -14,6 +14,7 @@ public class RoadNetwork : MonoBehaviour
     private QuadTreeRect<Road> qTree;
     private List<Road> primaryQueue;
     private List<Road> finalSegments;
+    private List<Intersection> intersections;
     private double[,] populationMap;
     private int[] roadCounters = {0, 0};
 
@@ -37,6 +38,7 @@ public class RoadNetwork : MonoBehaviour
         oldTownRoadSteps = descriptor.numOfSteps - (descriptor.numOfSteps * (descriptor.modernCityStructureExtent / 100f));
         modernRoadSteps = descriptor.numOfSteps - oldTownRoadSteps;
         //UnityEngine.Random.InitState(12345678);
+        UnityEngine.Random.InitState(3456789);
         descriptor.switchToOldTownThreshold = oldTownRoadSteps.Equals(descriptor.numOfSteps) ? 8 : 4;
         var numOfStepsToDecrease = descriptor.numOfSteps;
         roadCounters = new[] {0, 0};
@@ -47,6 +49,7 @@ public class RoadNetwork : MonoBehaviour
         var startRoadType = oldTownRoadSteps > descriptor.numOfSteps / 2f ? RoadType.OldTown : RoadType.Modern;
         primaryQueue = GetInitialRoads(startRoadType);
         finalSegments = new List<Road>();
+        intersections = new List<Intersection>();
 
         while (primaryQueue.Count != 0 && numOfStepsToDecrease != 0)
         {
@@ -75,7 +78,25 @@ public class RoadNetwork : MonoBehaviour
                 });
             }
         }
+
+        intersections.RemoveAll(intersection => (intersection.RoadsIn.Count + intersection.RoadsOut.Count) < 3);
         DrawSegments();
+        //DrawIntersections();
+    }
+
+    private void DrawIntersections()
+    {
+        foreach (var intersection in intersections)
+        {
+            if (intersection.CenterCornerPoints != null)
+            {
+                foreach (var cornerPoint in intersection.CenterCornerPoints)
+                {
+                    var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                    sphere.transform.position = cornerPoint ?? Vector3.zero;
+                }
+            }
+        }
     }
 
     private List<Road> GetInitialRoads(RoadType startRoadType)
@@ -135,7 +156,7 @@ public class RoadNetwork : MonoBehaviour
             }
             else
             {
-                roadView.GetComponent<LineRenderer>().endColor = roadView.road.Color;
+                roadView.GetComponent<LineRenderer>().endColor = Color.green;
                 roadView.GetComponent<LineRenderer>().startColor = roadView.road.Color;
             }
             roadView.Draw();
@@ -143,6 +164,7 @@ public class RoadNetwork : MonoBehaviour
         Debug.Log("Old: " + roadCounters[(int)RoadType.OldTown]);
         Debug.Log("Modern: " + roadCounters[(int)RoadType.Modern]);
         Debug.Log("Done");
+        Debug.Log("Number of intersections: " + intersections.Count);
     }
 
     private Road CheckLocalConstraints(Road r)
@@ -171,7 +193,37 @@ public class RoadNetwork : MonoBehaviour
             }
         }
 
+        AddRoadToIntersection(r);
+
         return r;
+    }
+
+    private void AddRoadToIntersection(Road road)
+    {
+        var startIsCenter = intersections.Find(intersection => intersection.Center.Equals(road.Start));
+        if (startIsCenter != null)
+        {
+            startIsCenter.RoadsOut.Add(road);
+        }
+        else
+        {
+            var newIntersection = new Intersection(new List<Road>(), new List<Road>(), road.Start);
+            newIntersection.RoadsOut.Add(road);
+            intersections.Add(newIntersection);
+        }
+        
+        var endIsCenter = intersections.Find(intersection => intersection.Center.Equals(road.End));
+        if (endIsCenter != null)
+        {
+            endIsCenter.RoadsIn.Add(road);
+        }
+        else
+        {
+            var newIntersection2 = new Intersection(new List<Road>(), new List<Road>(), road.End);
+            newIntersection2.RoadsIn.Add(road);
+            intersections.Add(newIntersection2);
+        }
+        
     }
 
     private bool CheckConstraintsOnNeighbours(ref Road r, RectangleF area)
@@ -280,6 +332,7 @@ public class RoadNetwork : MonoBehaviour
                 roadPopulation = randomRoadPopulation;
                 randomAngleRoad.Population = (float)roadPopulation;
                 previousRoad.NextRoad = randomAngleRoad;
+                randomAngleRoad.PrevRoad = previousRoad;
             }
             else
             {
@@ -287,6 +340,7 @@ public class RoadNetwork : MonoBehaviour
                 roadPopulation = straightPopulation;
                 straightRoad.Population = (float)roadPopulation;
                 previousRoad.NextRoad = straightRoad;
+                straightRoad.PrevRoad = previousRoad;
             }
             
             //highway from highway
@@ -298,6 +352,7 @@ public class RoadNetwork : MonoBehaviour
                     var leftHighwayBranch = Road.RoadWithDirection(previousRoad.End, leftAngle, descriptor.highwaySegmentLength, 0, previousRoad.IsHighway);
                     newRoads.Add(leftHighwayBranch);
                     previousRoad.NextRoad = leftHighwayBranch;
+                    leftHighwayBranch.PrevRoad = previousRoad;
                 }
                 else if (UnityEngine.Random.value < descriptor.highwayBranchProbability)
                 {
@@ -305,6 +360,7 @@ public class RoadNetwork : MonoBehaviour
                     var rightHighwayBranch = Road.RoadWithDirection(previousRoad.End, rightAngle, descriptor.highwaySegmentLength, 0, previousRoad.IsHighway);
                     newRoads.Add(rightHighwayBranch);
                     previousRoad.NextRoad = rightHighwayBranch;
+                    rightHighwayBranch.PrevRoad = previousRoad;
                 }
             } 
         }
@@ -312,6 +368,7 @@ public class RoadNetwork : MonoBehaviour
         {
             newRoads.Add(straightRoad);
             previousRoad.NextRoad = straightRoad;
+            straightRoad.PrevRoad = previousRoad;
         }
 
         //secondary road branching 
@@ -331,6 +388,7 @@ public class RoadNetwork : MonoBehaviour
                     Road.RoadWithDirection(previousRoad.End, leftAngle, descriptor.branchSegmentLength, timeDelay, false);
                 newRoads.Add(leftBranch);
                 previousRoad.NextRoad = leftBranch;
+                leftBranch.PrevRoad = previousRoad;
             }
             else if (UnityEngine.Random.value < descriptor.defaultBranchProbability)
             {
@@ -340,6 +398,7 @@ public class RoadNetwork : MonoBehaviour
                     Road.RoadWithDirection(previousRoad.End, rightAngle, descriptor.branchSegmentLength, timeDelay, false);
                 newRoads.Add(rightBranch);
                 previousRoad.NextRoad = rightBranch;
+                rightBranch.PrevRoad = previousRoad;
             }
         }
 
@@ -408,13 +467,27 @@ public class RoadNetwork : MonoBehaviour
             roadsToTexture.Remove(nextRoad2);
             nextRoad2 = roadsToTexture.Find(road => road.Start.Equals(nextRoad2.End));
         }
-        gameObject.GetComponent<Roadifier>().GenerateRoad(points, Terrain.activeTerrain);
-        gameObject.GetComponent<Roadifier>().GenerateRoad(points2, Terrain.activeTerrain);
+        gameObject.GetComponent<Roadifier>().GenerateRoad(points);
+        gameObject.GetComponent<Roadifier>().GenerateRoad(points2);
+        var meshes = gameObject.GetComponent<Roadifier>().GenerateIntersections(intersections);
         
-        CombineMeshes();
+        CombineInstance[] combine = new CombineInstance[meshes.Count];
+        int i = 0;
+        while (i < combine.Length)
+        {
+            combine[i].subMeshIndex = 0;
+            combine[i].mesh = meshes[i];
+            combine[i].transform = transform.localToWorldMatrix;
+            i++;
+        }
+        
+        Mesh intersectionMesh = new Mesh();
+        intersectionMesh.CombineMeshes(combine, true);
+        //DrawIntersections();
+        CombineMeshes(intersectionMesh);
     }
 
-    private void CombineMeshes()
+    private void CombineMeshes(Mesh intersectionMesh)
     {
         MeshFilter[] meshFilters = GetComponentsInChildren<MeshFilter>();
         CombineInstance[] combine = new CombineInstance[meshFilters.Length];
@@ -426,15 +499,26 @@ public class RoadNetwork : MonoBehaviour
         {
             combine[i].subMeshIndex = 0;
             combine[i].mesh = meshFilters[i].sharedMesh;
-            combine[i].transform = meshFilters[i].transform.localToWorldMatrix;
+            combine[i].transform = transform.localToWorldMatrix;
             meshFilters[i].gameObject.SetActive(false);
-            //Debug.Log(combine[i].mesh.name);
-
             i++;
         }
 
+        Mesh roadMesh = new Mesh();
+        roadMesh.CombineMeshes(combine, true);
+        combine = new CombineInstance[2];
+        combine[0].subMeshIndex = 0;
+        combine[0].mesh = roadMesh;
+        combine[0].transform = transform.localToWorldMatrix;
+        
+        combine[1].subMeshIndex = 0;
+        combine[1].mesh = intersectionMesh;
+        combine[1].transform = transform.localToWorldMatrix;
+
         Mesh finalMesh = new Mesh();
-        finalMesh.CombineMeshes(combine, true);
+        finalMesh.subMeshCount = 2;
+        finalMesh.name = "Road mesh";
+        finalMesh.CombineMeshes(combine, false);
         GetComponent<MeshFilter>().sharedMesh = finalMesh;
         transform.gameObject.SetActive(true);
     }

@@ -4,13 +4,15 @@
 using System;
 using UnityEngine;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 
 public class Roadifier : MonoBehaviour {
 	
-	public float roadWidth = 5.0f;
+	public float roadWidth = 1.0f;
 	public float smoothingFactor = 0.2f;
 	public int smoothingIterations = 3;
+	public float intersectionOffset = 0.5f;
 	public Material material;
 	public float terrainClearance = 0.05f;
 	private Mesh mesh;
@@ -18,6 +20,249 @@ public class Roadifier : MonoBehaviour {
 
 	public void GenerateRoad(List<Vector3> points) {
 		GenerateRoad(points, null);
+	}
+
+	public void GenerateIntersections2(List<Intersection> intersections)
+     	{
+     		List<Mesh> interMeshes = new List<Mesh>();
+     		// intersections with more than 2 roads
+     		var quadIntersections =
+     			intersections.Where(intersection => (intersection.RoadsIn.Count + intersection.RoadsOut.Count) > 3);
+     		
+     		Debug.Log(quadIntersections);
+     		
+     		// get intersection segments ("rectangles")
+     		foreach (var intersection in quadIntersections)
+     		{
+     			foreach (var road in intersection.RoadsIn)
+     			{
+     				var perpendicularToStart = (Vector3.Cross(Vector3.up /*or terrain normal*/,
+     					intersection.Center /*next point*/ - road.Start /*current point*/)).normalized;
+     				// far from center left
+     				var point1 = road.Start + perpendicularToStart * roadWidth * 0.5f;
+     				// far from center right
+     				var point2 = road.Start - perpendicularToStart * roadWidth * 0.5f;
+     				// close to center left
+     				var point3 = intersection.Center + perpendicularToStart * roadWidth * 0.5f;
+     				// close to center right
+     				var point4 = intersection.Center - perpendicularToStart * roadWidth * 0.5f;
+     				intersection.IntersectionSegments.Add(new IntersectionSegment()
+     				{
+     					RectCornerPoints = new[]
+     					{
+     						point3,
+     						point4,
+     						point1,
+     						point2
+     					}
+     				});
+     			}
+     
+     			foreach (var road in intersection.RoadsOut)
+     			{
+     				var perpendicularToCenter = (Vector3.Cross(Vector3.up /*or terrain normal*/,
+     					road.End /*next point*/ - intersection.Center /*current point*/)).normalized;
+     				// close to center left
+     				var point3 = intersection.Center + perpendicularToCenter * roadWidth * 0.5f;
+     				// close to center right
+     				var point4 = intersection.Center - perpendicularToCenter * roadWidth * 0.5f;
+     				// far from center left
+     				var point1 = road.End + perpendicularToCenter * roadWidth * 0.5f;
+     				// far from center right
+     				var point2 = road.End - perpendicularToCenter * roadWidth * 0.5f;
+     				
+     				intersection.IntersectionSegments.Add(new IntersectionSegment()
+     				{
+     					RectCornerPoints = new []
+     					{
+     						point3,
+     						point4,
+     						point1,
+     						point2
+     					}
+     				});
+     			}
+     			var firstSegment = intersection.IntersectionSegments[0];
+     			var rightSegmentToIntersect = intersection.IntersectionSegments.Find(segment => 
+     				segment.Rectangle.Contains(firstSegment.RectCornerPoints[1])
+     				&& !segment.Equals(firstSegment));
+     			
+     			var cornerpoint1 = MathHelper.LineIntersect(firstSegment.RectCornerPoints[1],
+     				firstSegment.RectCornerPoints[3], rightSegmentToIntersect.RectCornerPoints[1],
+     				rightSegmentToIntersect.RectCornerPoints[3]);
+     			
+     			var leftSegmentToIntersect = intersection.IntersectionSegments.Find(segment =>
+     				segment.Rectangle.Contains(firstSegment.RectCornerPoints[0])
+     				&& !segment.Equals(firstSegment));
+     			
+     			var cornerpoint2 = MathHelper.LineIntersect(firstSegment.RectCornerPoints[0],
+     				firstSegment.RectCornerPoints[2], leftSegmentToIntersect.RectCornerPoints[3],
+     				leftSegmentToIntersect.RectCornerPoints[1]);
+     			
+     			// find the fourth segment
+     			var lastSegment = intersection.IntersectionSegments.Find(segment =>
+     				!segment.Equals(firstSegment)
+     				&& !segment.Equals(rightSegmentToIntersect)
+     				&& !segment.Equals(leftSegmentToIntersect));
+     
+     			var cornerpoint3 = MathHelper.LineIntersect(lastSegment.RectCornerPoints[0], lastSegment.RectCornerPoints[2],
+     				leftSegmentToIntersect.RectCornerPoints[0], leftSegmentToIntersect.RectCornerPoints[2]);
+     			
+     			var cornerpoint4 = MathHelper.LineIntersect(lastSegment.RectCornerPoints[1], lastSegment.RectCornerPoints[3],
+     				rightSegmentToIntersect.RectCornerPoints[1], rightSegmentToIntersect.RectCornerPoints[3]);
+     			
+     			intersection.CenterCornerPoints = new [] {cornerpoint1, cornerpoint2, cornerpoint3, cornerpoint4};
+     		}
+     	}
+
+	public List<Mesh> GenerateIntersections(List<Intersection> intersections)
+	{
+		List<Mesh> interMeshes = new List<Mesh>();
+		var quadIntersections =
+			intersections.Where(intersection => (intersection.RoadsIn.Count + intersection.RoadsOut.Count) == 4);
+		
+		Debug.Log(quadIntersections);
+		var boxMaxSide = 0f;
+		foreach (var intersection in quadIntersections)
+		{
+			List<Vector3> cornerPoints = new List<Vector3>(4);
+			Vector3[] roadVectors = new Vector3[4];
+			var counter = 0;
+			foreach (var road in intersection.RoadsIn)
+			{
+				roadVectors[counter++] = road.Start - road.End;
+			}
+			
+			foreach (var road in intersection.RoadsOut)
+			{
+				roadVectors[counter++] = road.End - road.Start;
+			}
+
+			int oppositeIdx = 0;
+			float maxAngle = 0;
+			for (int i = 1; i < roadVectors.Length; i++)
+			{
+				var angle = Vector3.Angle(roadVectors[0], roadVectors[i]);
+				if (angle > maxAngle)
+				{
+					maxAngle = angle;
+					oppositeIdx = i;
+				}
+			}
+			
+			for (int i = 1; i < roadVectors.Length; i++)
+			{
+				if (i == oppositeIdx)
+				{
+					continue;
+				}
+				
+				// Vector3.Cross.magnitude --> sin(alfa), alfa --> angle between roadvec[0] and roadvec[i]
+				var y = (roadWidth / 2) / Vector3.Cross(roadVectors[0].normalized, roadVectors[i].normalized).magnitude;
+				Vector3 cornerPoint = (roadVectors[0].normalized + roadVectors[i].normalized) * y + intersection.Center;
+				cornerPoints.Add(cornerPoint);
+			}
+			
+			for (int i = 1; i < roadVectors.Length; i++)
+			{
+				if (i == oppositeIdx)
+				{
+					continue;
+				}
+				
+				// Vector3.Cross.magnitude --> sin(alfa), alfa --> angle between roadvec[0] and roadvec[i]
+				var y = (roadWidth / 2) / Vector3.Cross(roadVectors[oppositeIdx].normalized, roadVectors[i].normalized).magnitude;
+				Vector3 cornerPoint = (roadVectors[oppositeIdx].normalized + roadVectors[i].normalized) * y + intersection.Center;
+				cornerPoints.Add(cornerPoint);
+			}
+
+
+			var triangles = new List<int>();
+			if (Vector3.Cross(cornerPoints[1] - cornerPoints[0], cornerPoints[2] - cornerPoints[0]).y > 0)
+			{
+				triangles.Add(0);
+				triangles.Add(1);
+				triangles.Add(2);
+				triangles.Add(1);
+				triangles.Add(3);
+				triangles.Add(2);
+			}
+			else
+			{
+				triangles.Add(1);
+				triangles.Add(0);
+				triangles.Add(2);
+				triangles.Add(1);
+				triangles.Add(2);
+				triangles.Add(3);
+			}
+			var boundingBox = GetBoundingBox(cornerPoints.ToArray());
+			if ((boundingBox.height > boundingBox.width ? boundingBox.height : boundingBox.width) > boxMaxSide)
+			{
+				boxMaxSide = boundingBox.height > boundingBox.width ? boundingBox.height : boundingBox.width;
+			}
+			
+			var uvs = new Vector2[4];
+
+			for (int i = 0; i < cornerPoints.Count; i++)
+			{
+				uvs[i] = new Vector2(cornerPoints[i].x - boundingBox.x, cornerPoints[i].z - boundingBox.y);
+			}
+			
+			var mesh = new Mesh();
+			mesh.vertices = cornerPoints.ToArray();
+			mesh.triangles = triangles.ToArray();
+			mesh.uv = uvs;
+			
+			interMeshes.Add(mesh);
+			mesh.RecalculateNormals();
+			//CreateGameObject(mesh);
+		}
+
+		foreach (var mesh in interMeshes)
+		{
+			var uvs = new Vector2[4];
+			var boundingBox = GetBoundingBox(mesh.vertices);
+
+			var newUvs = new Vector2[mesh.uv.Length];
+			for (int i = 0; i < newUvs.Length; i++)
+			{
+				newUvs[i] = mesh.uv[i] / boxMaxSide;
+			}
+
+			mesh.uv = newUvs;
+
+		}
+		return interMeshes;
+	}
+
+	private Rect GetBoundingBox(params Vector3[] points)
+	{
+		Vector3 max = points[0];
+		Vector3 min = points[0];
+		foreach (var point in points)
+		{
+			if (point.x > max.x)
+			{
+				max.x = point.x;
+			}
+
+			if (point.z > max.z)
+			{
+				max.z = point.z;
+			}
+			
+			if (point.x < min.x)
+			{
+				min.x = point.x;
+			}
+
+			if (point.z < min.z)
+			{
+				min.z = point.z;
+			}
+		}
+		return new Rect(min.x, min.z, max.x - min.x, max.z - min.z);
 	}
 
 	public void GenerateRoad(List<Vector3> points, Terrain terrain) {
@@ -173,13 +418,6 @@ public class Roadifier : MonoBehaviour {
 			i++;
 		}
 	}
-	
-
-
-//	private void OnDrawGizmos()
-//	{
-//		Gizmos.DrawWireMesh(mesh);
-//	}
 
 	private void AdaptPointsToTerrainHeight(List<Vector3> points, Terrain terrain) {
 		for (int i = 0; i < points.Count; i++) {
@@ -188,11 +426,11 @@ public class Roadifier : MonoBehaviour {
 		}
 	}
 
-	private void  CreateGameObject ( Mesh mesh ){
+	public void  CreateGameObject ( Mesh mesh ){
 		GameObject obj = new GameObject("Roadifier Road", typeof(MeshRenderer), typeof(MeshFilter), typeof(MeshCollider));
 		obj.GetComponent<MeshFilter>().mesh = mesh;
 		obj.transform.SetParent(transform);
-		obj.transform.position += Vector3.up*0.1f;
+		//obj.transform.position += Vector3.up*0.1f;
 		
 		MeshRenderer renderer = obj.GetComponent<MeshRenderer>();
 		var materials= renderer.sharedMaterials;
