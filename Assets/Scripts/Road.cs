@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Drawing;
 using System;
+using System.Runtime.CompilerServices;
 using QuadTrees.QTreeRect;
 
 [Serializable]
@@ -20,12 +21,21 @@ public class Road : IRectQuadStorable
     public Road NextRoad { get; set; }
     public Road PrevRoad { get; set; }
 
+    public Vector3 MeshStart { get; set; }
+    public Vector3 MeshEnd { get; set; }
+
     public RoadType Type { get; set; }
 
     public int addedToQtreeTime;
     
     // TODO: somehow get from RoadNetworkDescriptor
     private float roadSnapDistance = 1;
+
+    public Road()
+    {
+        MeshStart = Start;
+        MeshEnd = End;
+    }
 
     //Quadtree
     public RectangleF Rectangle => new RectangleF(Bounds.x, Bounds.y, Bounds.width, Bounds.height);
