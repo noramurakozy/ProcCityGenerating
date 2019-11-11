@@ -31,10 +31,12 @@ public class Road : IRectQuadStorable
     // TODO: somehow get from RoadNetworkDescriptor
     private float roadSnapDistance = 1;
 
-    public Road()
+    public Road(Vector3 start, Vector3 end)
     {
-        MeshStart = Start;
-        MeshEnd = End;
+        Start = start;
+        End = end;
+        MeshStart = start;
+        MeshEnd = end;
     }
 
     //Quadtree
@@ -81,10 +83,8 @@ public class Road : IRectQuadStorable
 
     public static Road RoadWithDirection(Vector3 start, float directionAngle, float length, int number, bool isHighway)
     {
-        return new Road()
+        return new Road(start, start + Quaternion.Euler(0, directionAngle, 0) * Vector3.right * length)
         {
-            Start = start,
-            End = start + Quaternion.Euler(0, directionAngle, 0) * Vector3.right * length,
             DirectionAngle = directionAngle,
             Number = number,
             IsHighway = isHighway

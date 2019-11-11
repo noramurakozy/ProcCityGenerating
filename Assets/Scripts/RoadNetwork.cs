@@ -66,11 +66,9 @@ public class RoadNetwork : MonoBehaviour
             
             foreach (Road road in GlobalGoals(modified))
             {
-                primaryQueue.Add(new Road()
+                primaryQueue.Add(new Road(road.Start, road.End)
                 {
-                    Number = min.Number + road.Number + 1, 
-                    Start = road.Start, 
-                    End = road.End, 
+                    Number = min.Number + road.Number + 1,
                     DirectionAngle = road.DirectionAngle, 
                     IsHighway = road.IsHighway, 
                     Color = road.Color, 
@@ -103,18 +101,14 @@ public class RoadNetwork : MonoBehaviour
     {
         return new List<Road>()
         {
-            new Road()
+            new Road(new Vector3(descriptor.mapHeight / 2, 0, descriptor.mapWidth / 2), new Vector3(descriptor.mapHeight / 2 + descriptor.highwaySegmentLength, 0, descriptor.mapWidth / 2))
             {
-                Start = new Vector3(descriptor.mapHeight / 2, 0, descriptor.mapWidth / 2),
-                End = new Vector3(descriptor.mapHeight / 2 + descriptor.highwaySegmentLength, 0, descriptor.mapWidth / 2), 
                 Number = 0, 
                 IsHighway = true,
                 Type = startRoadType
             },
-            new Road()
+            new Road(new Vector3(descriptor.mapHeight / 2, 0, descriptor.mapWidth / 2), new Vector3(descriptor.mapHeight / 2 - descriptor.highwaySegmentLength, 0, descriptor.mapWidth / 2))
             {
-                Start = new Vector3(descriptor.mapHeight / 2, 0, descriptor.mapWidth / 2),
-                End = new Vector3(descriptor.mapHeight / 2 - descriptor.highwaySegmentLength, 0, descriptor.mapWidth / 2), 
                 Number = 0, 
                 IsHighway = true,
                 DirectionAngle = 180, 
@@ -433,20 +427,21 @@ public class RoadNetwork : MonoBehaviour
 //        gameObject.GetComponent<Roadifier>().GenerateRoad(points, Terrain.activeTerrain);
 //        DestroyAllObjects();
 
+        var meshes = gameObject.GetComponent<Roadifier>().GenerateIntersections(intersections);
         var points = new List<Vector3>();
         var roadsToTexture = new List<Road>(finalSegments);
         var lastRoad = roadsToTexture.Last();
-        points.Add(lastRoad.End);
-        points.Add(lastRoad.Start);
+        points.Add(lastRoad.MeshEnd);
+        points.Add(lastRoad.MeshStart);
         roadsToTexture.Remove(lastRoad);
         var startRoad = GetInitialRoads(RoadType.OldTown)[0];
         var startRoad2 = GetInitialRoads(RoadType.OldTown)[1];
-        var prevRoad = roadsToTexture.Find(road => road.End.Equals(lastRoad.Start));
+        var prevRoad = roadsToTexture.Find(road => road.MeshEnd.Equals(lastRoad.MeshStart));
         // just to stop the possible infinite loops
         int counter = 0;
         while (prevRoad != null || counter >= 100)
         {
-            points.Add(prevRoad.Start);
+            points.Add(prevRoad.MeshStart);
             //Debug.Log("Counter " + counter++);
             roadsToTexture.Remove(prevRoad);
             prevRoad = roadsToTexture.Find(road => road.End.Equals(prevRoad.Start));
@@ -454,22 +449,21 @@ public class RoadNetwork : MonoBehaviour
         
         var points2 = new List<Vector3>();
         var firstRoad = roadsToTexture.First();
-        points2.Add(firstRoad.Start);
-        points2.Add(firstRoad.End);
+        points2.Add(firstRoad.MeshStart);
+        points2.Add(firstRoad.MeshEnd);
         roadsToTexture.Remove(firstRoad);
         var nextRoad2 = roadsToTexture.Find(road => road.Start.Equals(firstRoad.End));
         // just to stop the possible infinite loop
         int counter2 = 0;
         while (nextRoad2 != null || counter2 >= 100)
         {
-            points2.Add(nextRoad2.End);
+            points2.Add(nextRoad2.MeshEnd);
             //Debug.Log("Counter " + counter2++);
             roadsToTexture.Remove(nextRoad2);
             nextRoad2 = roadsToTexture.Find(road => road.Start.Equals(nextRoad2.End));
         }
         gameObject.GetComponent<Roadifier>().GenerateRoad(points);
         gameObject.GetComponent<Roadifier>().GenerateRoad(points2);
-        var meshes = gameObject.GetComponent<Roadifier>().GenerateIntersections(intersections);
         
         CombineInstance[] combine = new CombineInstance[meshes.Count];
         int i = 0;
