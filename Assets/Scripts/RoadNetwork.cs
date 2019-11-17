@@ -35,6 +35,11 @@ public class RoadNetwork : MonoBehaviour
 
     public void UpdateCity()
     {
+        var roadMeshesParent = GameObject.Find("Road meshes");
+        Destroyer.SafeDestroy(roadMeshesParent);
+        roadMeshesParent = new GameObject("Road meshes");
+        roadMeshesParent.transform.SetParent(transform);
+        
         oldTownRoadSteps = descriptor.numOfSteps - (descriptor.numOfSteps * (descriptor.modernCityStructureExtent / 100f));
         modernRoadSteps = descriptor.numOfSteps - oldTownRoadSteps;
         //UnityEngine.Random.InitState(12345678);
@@ -77,9 +82,49 @@ public class RoadNetwork : MonoBehaviour
             }
         }
 
-        intersections.RemoveAll(intersection => (intersection.RoadsIn.Count + intersection.RoadsOut.Count) < 3);
+        //FixIntersectionsWithoutOutRoads();
+
+        //intersections.RemoveAll(intersection => (intersection.RoadsIn.Count + intersection.RoadsOut.Count) < 3);
         DrawSegments();
         //DrawIntersections();
+    }
+
+    private void FixIntersectionsWithoutOutRoads()
+    {
+        var withoutOutRoads = intersections.FindAll(intersection => intersection.RoadsIn.Count == 2 && intersection.RoadsOut.Count == 0);
+        foreach (var intersection in withoutOutRoads)
+        {
+        	var road1 = intersection.RoadsIn[0];
+            
+            var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            sphere.transform.position = road1.End;
+            sphere.transform.localScale = Vector3.one * 0.1f;
+            
+        	var roadStart = new Vector3(road1.Start.x, road1.Start.y, road1.Start.z);
+        	var roadEnd = new Vector3(road1.End.x, road1.End.y, road1.End.z);
+        	var roadPrevIntersection = road1.PrevIntersection;
+        	var roadNextIntersection = road1.NextIntersection;
+        	
+        	road1.Start = roadEnd;
+        	road1.End = roadStart;
+
+            intersection.RoadsIn.Remove(road1);
+            intersection.RoadsOut.Add(road1);
+            
+            road1.PrevIntersection = roadNextIntersection;
+            road1.NextIntersection = roadPrevIntersection;
+
+            road1.PrevIntersection.RoadsOut.Remove(road1);
+            road1.PrevIntersection.RoadsIn.Add(road1);
+            
+            var sphere1 = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            sphere1.transform.position = road1.End;
+            sphere1.transform.localScale = Vector3.one * 0.1f;
+            
+            var sphere2 = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            sphere2.transform.position = road1.MeshEnd;
+            sphere2.transform.localScale = Vector3.one * 0.2f;
+        }
     }
 
     private void DrawIntersections()
@@ -145,7 +190,7 @@ public class RoadNetwork : MonoBehaviour
 
             if (road.IsHighway)
             {
-                roadView.GetComponent<LineRenderer>().endColor = descriptor.highwayColor;
+                roadView.GetComponent<LineRenderer>().endColor = Color.magenta;
                 roadView.GetComponent<LineRenderer>().startColor = descriptor.highwayColor;
             }
             else
@@ -186,9 +231,6 @@ public class RoadNetwork : MonoBehaviour
                 return null;
             }
         }
-
-        AddRoadToIntersection(r);
-
         return r;
     }
 
@@ -198,24 +240,28 @@ public class RoadNetwork : MonoBehaviour
         if (startIsCenter != null)
         {
             startIsCenter.RoadsOut.Add(road);
+            road.PrevIntersection = startIsCenter;
         }
         else
         {
             var newIntersection = new Intersection(new List<Road>(), new List<Road>(), road.Start);
             newIntersection.RoadsOut.Add(road);
             intersections.Add(newIntersection);
+            road.PrevIntersection = newIntersection;
         }
         
         var endIsCenter = intersections.Find(intersection => intersection.Center.Equals(road.End));
         if (endIsCenter != null)
         {
             endIsCenter.RoadsIn.Add(road);
+            road.NextIntersection = endIsCenter;
         }
         else
         {
             var newIntersection2 = new Intersection(new List<Road>(), new List<Road>(), road.End);
             newIntersection2.RoadsIn.Add(road);
             intersections.Add(newIntersection2);
+            road.NextIntersection = newIntersection2;
         }
         
     }
@@ -226,6 +272,11 @@ public class RoadNetwork : MonoBehaviour
         {
             //snap to crossing
             SnapToCrossing(ref r, otherSegment);
+
+            if (r == null)
+            {
+                return true;
+            }
 
             //check if it still fits after the end was updated
             foreach (var item in qTree.GetObjects(area))
@@ -249,11 +300,6 @@ public class RoadNetwork : MonoBehaviour
             road1.Start = road2.Start;
         }
 
-        if (MathHelper.PointsAreClose(road1.End, road2.End, descriptor.roadSnapDistance))
-        {
-            road1.End = road2.End;
-        }
-
         if (MathHelper.PointsAreClose(road1.Start, road2.End, descriptor.roadSnapDistance))
         {
             road1.Start = road2.End;
@@ -269,13 +315,19 @@ public class RoadNetwork : MonoBehaviour
         {
             if (MathHelper.FindDistanceToSegment(road1.End, road2.Start, road2.End, out _, out _) < descriptor.roadSnapDistance)
             {
-                road1.End = Vector3.Distance(road1.End, road2.Start) < Vector3.Distance(road1.End, road2.End) ? road2.Start : road2.End;
+                //road1.End = Vector3.Distance(road1.End, road2.Start) < Vector3.Distance(road1.End, road2.End) ? road2.Start : road2.End;
+                //road1 = null;
             }
-            
-            if (MathHelper.FindDistanceToSegment(road1.Start, road2.Start, road2.End, out _, out _) < descriptor.roadSnapDistance)
+            else if (MathHelper.FindDistanceToSegment(road1.Start, road2.Start, road2.End, out _, out _) < descriptor.roadSnapDistance)
             {
                 road1.Start = Vector3.Distance(road1.Start, road2.Start) < Vector3.Distance(road1.Start, road2.End) ? road2.Start : road2.End;
             }
+        }
+        
+        if (MathHelper.PointsAreClose(road1.End, road2.End, descriptor.roadSnapDistance))
+        {
+            //road1.End = road2.End;
+            //road1 = null;
         }
     }
 
@@ -314,7 +366,6 @@ public class RoadNetwork : MonoBehaviour
         {
             var angle = previousRoad.DirectionAngle + UnityEngine.Random.Range(-descriptor.highwayRandomAngle, descriptor.highwayRandomAngle);
             var randomAngleRoad = Road.RoadWithDirection(previousRoad.End, angle, previousRoad.Length, 0, previousRoad.IsHighway);
-
             var randomRoadPopulation = PlaneGenerator.GetHeatMapAt(randomAngleRoad.End.x, randomAngleRoad.End.z, PlaneType.Population);
 
             double roadPopulation;
@@ -405,6 +456,7 @@ public class RoadNetwork : MonoBehaviour
     {
         segments.Add(segment);
         quadTree.Add(segment);
+        AddRoadToIntersection(segment);
         lastAddedTime++;
         segment.addedToQtreeTime = lastAddedTime;
     }
@@ -418,103 +470,62 @@ public class RoadNetwork : MonoBehaviour
 
     public void GenerateTexturedCity()
     {
-//        var terrain = Instantiate(this.terrain);
-//        var roadArchitectSystem = Instantiate(this.roadArchitectSystem);
-//        var gsdSplineC = roadArchitectSystem.AddRoad().GetComponent<GSDRoad>().GSDSpline;
-//        gsdSplineC.mNodes.Add(new GSDSplineN());
-//        var points = finalSegments.Select(road => road.End).ToList();
-//        points.Insert(0, new Vector3(100,0,100));
-//        gameObject.GetComponent<Roadifier>().GenerateRoad(points, Terrain.activeTerrain);
-//        DestroyAllObjects();
+        foreach (var finalSegment in finalSegments)
+        {
+            finalSegment.MeshStart = finalSegment.Start;
+            finalSegment.MeshEnd = finalSegment.End;
+        }
 
-        var meshes = gameObject.GetComponent<Roadifier>().GenerateIntersections(intersections);
-        var points = new List<Vector3>();
-        var roadsToTexture = new List<Road>(finalSegments);
-        var lastRoad = roadsToTexture.Last();
-        points.Add(lastRoad.MeshEnd);
-        points.Add(lastRoad.MeshStart);
-        roadsToTexture.Remove(lastRoad);
-        var startRoad = GetInitialRoads(RoadType.OldTown)[0];
-        var startRoad2 = GetInitialRoads(RoadType.OldTown)[1];
-        var prevRoad = roadsToTexture.Find(road => road.MeshEnd.Equals(lastRoad.MeshStart));
-        // just to stop the possible infinite loops
-        int counter = 0;
-        while (prevRoad != null || counter >= 100)
-        {
-            points.Add(prevRoad.MeshStart);
-            //Debug.Log("Counter " + counter++);
-            roadsToTexture.Remove(prevRoad);
-            prevRoad = roadsToTexture.Find(road => road.End.Equals(prevRoad.Start));
-        }
-        
-        var points2 = new List<Vector3>();
-        var firstRoad = roadsToTexture.First();
-        points2.Add(firstRoad.MeshStart);
-        points2.Add(firstRoad.MeshEnd);
-        roadsToTexture.Remove(firstRoad);
-        var nextRoad2 = roadsToTexture.Find(road => road.Start.Equals(firstRoad.End));
-        // just to stop the possible infinite loop
-        int counter2 = 0;
-        while (nextRoad2 != null || counter2 >= 100)
-        {
-            points2.Add(nextRoad2.MeshEnd);
-            //Debug.Log("Counter " + counter2++);
-            roadsToTexture.Remove(nextRoad2);
-            nextRoad2 = roadsToTexture.Find(road => road.Start.Equals(nextRoad2.End));
-        }
-        gameObject.GetComponent<Roadifier>().GenerateRoad(points);
-        gameObject.GetComponent<Roadifier>().GenerateRoad(points2);
-        
-        CombineInstance[] combine = new CombineInstance[meshes.Count];
+        var intersectionMeshes = gameObject.GetComponent<Roadifier>().GenerateIntersections(intersections);
+        var roadMeshes = gameObject.GetComponent<Roadifier>().GenerateRoadMeshes(intersections);
+
+        CombineInstance[] intersectionCombine = new CombineInstance[intersectionMeshes.Count];
         int i = 0;
-        while (i < combine.Length)
+        while (i < intersectionCombine.Length)
         {
-            combine[i].subMeshIndex = 0;
-            combine[i].mesh = meshes[i];
-            combine[i].transform = transform.localToWorldMatrix;
+            intersectionCombine[i].subMeshIndex = 0;
+            intersectionCombine[i].mesh = intersectionMeshes[i];
+            intersectionCombine[i].transform = transform.localToWorldMatrix;
             i++;
+        }
+        
+        CombineInstance[] roadCombine = new CombineInstance[roadMeshes.Count];
+        int j = 0;
+        while (j < roadCombine.Length)
+        {
+            roadCombine[j].subMeshIndex = 0;
+            roadCombine[j].mesh = roadMeshes[j];
+            roadCombine[j].transform = transform.localToWorldMatrix;
+            j++;
         }
         
         Mesh intersectionMesh = new Mesh();
-        intersectionMesh.CombineMeshes(combine, true);
-        //DrawIntersections();
-        CombineMeshes(intersectionMesh);
+        intersectionMesh.CombineMeshes(intersectionCombine, true);
+        
+        Mesh roadMesh = new Mesh();
+        roadMesh.CombineMeshes(roadCombine, true);
+        
+        CombineMeshes(intersectionMesh, roadMesh);
     }
 
-    private void CombineMeshes(Mesh intersectionMesh)
+    private void CombineMeshes(Mesh intersectionMesh, Mesh roadMesh)
     {
-        MeshFilter[] meshFilters = GetComponentsInChildren<MeshFilter>();
-        CombineInstance[] combine = new CombineInstance[meshFilters.Length];
+        var localToWorldMatrix = transform.localToWorldMatrix;
+        CombineInstance[] combine = new CombineInstance[2];
         
-        Debug.Log(name + " is combining " + meshFilters.Length + "meshes!");
-        
-        int i = 0;
-        while (i < meshFilters.Length)
-        {
-            combine[i].subMeshIndex = 0;
-            combine[i].mesh = meshFilters[i].sharedMesh;
-            combine[i].transform = transform.localToWorldMatrix;
-            meshFilters[i].gameObject.SetActive(false);
-            i++;
-        }
-
-        Mesh roadMesh = new Mesh();
-        roadMesh.CombineMeshes(combine, true);
-        combine = new CombineInstance[2];
         combine[0].subMeshIndex = 0;
-        combine[0].mesh = roadMesh;
-        combine[0].transform = transform.localToWorldMatrix;
+        combine[0].mesh = intersectionMesh;
+        combine[0].transform = localToWorldMatrix;
         
         combine[1].subMeshIndex = 0;
-        combine[1].mesh = intersectionMesh;
-        combine[1].transform = transform.localToWorldMatrix;
-
+        combine[1].mesh = roadMesh;
+        combine[1].transform = localToWorldMatrix;
+        
         Mesh finalMesh = new Mesh();
         finalMesh.subMeshCount = 2;
         finalMesh.name = "Road mesh";
         finalMesh.CombineMeshes(combine, false);
         GetComponent<MeshFilter>().sharedMesh = finalMesh;
-        transform.gameObject.SetActive(true);
     }
     
     private void OnDrawGizmos()

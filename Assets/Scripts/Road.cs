@@ -20,10 +20,11 @@ public class Road : IRectQuadStorable
     public UnityEngine.Color Color { get; set; } = UnityEngine.Color.red;
     public Road NextRoad { get; set; }
     public Road PrevRoad { get; set; }
-
+    
+    public Intersection NextIntersection { get; set; }
+    public Intersection PrevIntersection { get; set; }
     public Vector3 MeshStart { get; set; }
     public Vector3 MeshEnd { get; set; }
-
     public RoadType Type { get; set; }
 
     public int addedToQtreeTime;
@@ -35,8 +36,6 @@ public class Road : IRectQuadStorable
     {
         Start = start;
         End = end;
-        MeshStart = start;
-        MeshEnd = end;
     }
 
     //Quadtree

@@ -49,7 +49,7 @@ public class RoadNetworkDescriptor
     {
         highwayRandomAngle = 15;
         defaultRoadRandomAngle = 3;
-        roadSnapDistance = 1;
+        //roadSnapDistance = 1;
         minBaseAngle = 80;
         normalBranchPopulationThreshold = 5;
     }
@@ -58,7 +58,7 @@ public class RoadNetworkDescriptor
     {
         highwayRandomAngle = 2;
         defaultRoadRandomAngle = 0;
-        roadSnapDistance = 0.3f;
+        //roadSnapDistance = 0.3f;
         minBaseAngle = 90;
         normalBranchPopulationThreshold = 4;
     }

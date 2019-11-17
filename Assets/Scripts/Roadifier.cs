@@ -22,109 +22,19 @@ public class Roadifier : MonoBehaviour {
 	private Vector2[] uvs;
 	private static readonly float ROAD_MESH_OFFSET = 0.8f;
 
-	public void GenerateRoad(List<Vector3> points) {
-		GenerateRoad(points, null);
+	public List<Mesh> GenerateIntersections(List<Intersection> intersections)
+	{
+		var interMeshes = GenerateQuadIntersections(intersections);
+		interMeshes.AddRange(GenerateTriIntersections(intersections));
+		return interMeshes;
 	}
 
-	public void GenerateIntersections2(List<Intersection> intersections)
-     	{
-     		List<Mesh> interMeshes = new List<Mesh>();
-     		// intersections with more than 2 roads
-     		var quadIntersections =
-     			intersections.Where(intersection => (intersection.RoadsIn.Count + intersection.RoadsOut.Count) > 3);
-     		
-     		Debug.Log(quadIntersections);
-     		
-     		// get intersection segments ("rectangles")
-     		foreach (var intersection in quadIntersections)
-     		{
-     			foreach (var road in intersection.RoadsIn)
-     			{
-     				var perpendicularToStart = (Vector3.Cross(Vector3.up /*or terrain normal*/,
-     					intersection.Center /*next point*/ - road.Start /*current point*/)).normalized;
-     				// far from center left
-     				var point1 = road.Start + perpendicularToStart * roadWidth * 0.5f;
-     				// far from center right
-     				var point2 = road.Start - perpendicularToStart * roadWidth * 0.5f;
-     				// close to center left
-     				var point3 = intersection.Center + perpendicularToStart * roadWidth * 0.5f;
-     				// close to center right
-     				var point4 = intersection.Center - perpendicularToStart * roadWidth * 0.5f;
-     				intersection.IntersectionSegments.Add(new IntersectionSegment()
-     				{
-     					RectCornerPoints = new[]
-     					{
-     						point3,
-     						point4,
-     						point1,
-     						point2
-     					}
-     				});
-     			}
-     
-     			foreach (var road in intersection.RoadsOut)
-     			{
-     				var perpendicularToCenter = (Vector3.Cross(Vector3.up /*or terrain normal*/,
-     					road.End /*next point*/ - intersection.Center /*current point*/)).normalized;
-     				// close to center left
-     				var point3 = intersection.Center + perpendicularToCenter * roadWidth * 0.5f;
-     				// close to center right
-     				var point4 = intersection.Center - perpendicularToCenter * roadWidth * 0.5f;
-     				// far from center left
-     				var point1 = road.End + perpendicularToCenter * roadWidth * 0.5f;
-     				// far from center right
-     				var point2 = road.End - perpendicularToCenter * roadWidth * 0.5f;
-     				
-     				intersection.IntersectionSegments.Add(new IntersectionSegment()
-     				{
-     					RectCornerPoints = new []
-     					{
-     						point3,
-     						point4,
-     						point1,
-     						point2
-     					}
-     				});
-     			}
-     			var firstSegment = intersection.IntersectionSegments[0];
-     			var rightSegmentToIntersect = intersection.IntersectionSegments.Find(segment => 
-     				segment.Rectangle.Contains(firstSegment.RectCornerPoints[1])
-     				&& !segment.Equals(firstSegment));
-     			
-     			var cornerpoint1 = MathHelper.LineIntersect(firstSegment.RectCornerPoints[1],
-     				firstSegment.RectCornerPoints[3], rightSegmentToIntersect.RectCornerPoints[1],
-     				rightSegmentToIntersect.RectCornerPoints[3]);
-     			
-     			var leftSegmentToIntersect = intersection.IntersectionSegments.Find(segment =>
-     				segment.Rectangle.Contains(firstSegment.RectCornerPoints[0])
-     				&& !segment.Equals(firstSegment));
-     			
-     			var cornerpoint2 = MathHelper.LineIntersect(firstSegment.RectCornerPoints[0],
-     				firstSegment.RectCornerPoints[2], leftSegmentToIntersect.RectCornerPoints[3],
-     				leftSegmentToIntersect.RectCornerPoints[1]);
-     			
-     			// find the fourth segment
-     			var lastSegment = intersection.IntersectionSegments.Find(segment =>
-     				!segment.Equals(firstSegment)
-     				&& !segment.Equals(rightSegmentToIntersect)
-     				&& !segment.Equals(leftSegmentToIntersect));
-     
-     			var cornerpoint3 = MathHelper.LineIntersect(lastSegment.RectCornerPoints[0], lastSegment.RectCornerPoints[2],
-     				leftSegmentToIntersect.RectCornerPoints[0], leftSegmentToIntersect.RectCornerPoints[2]);
-     			
-     			var cornerpoint4 = MathHelper.LineIntersect(lastSegment.RectCornerPoints[1], lastSegment.RectCornerPoints[3],
-     				rightSegmentToIntersect.RectCornerPoints[1], rightSegmentToIntersect.RectCornerPoints[3]);
-     			
-     			intersection.CenterCornerPoints = new [] {cornerpoint1, cornerpoint2, cornerpoint3, cornerpoint4};
-     		}
-     	}
-
-	public List<Mesh> GenerateIntersections(List<Intersection> intersections)
+	private List<Mesh> GenerateQuadIntersections(List<Intersection> intersections)
 	{
 		List<Mesh> interMeshes = new List<Mesh>();
 		var quadIntersections =
 			intersections.Where(intersection => (intersection.RoadsIn.Count + intersection.RoadsOut.Count) == 4);
-		
+
 		var boxMaxSide = 0f;
 		foreach (var intersection in quadIntersections)
 		{
@@ -134,14 +44,14 @@ public class Roadifier : MonoBehaviour {
 			foreach (var road in intersection.RoadsIn)
 			{
 				roadVectors[counter] = road.Start - road.End;
-				road.MeshEnd = road.End + roadVectors[counter].normalized * (roadLength - ROAD_MESH_OFFSET);
+				road.MeshEnd = road.End + roadVectors[counter].normalized * ROAD_MESH_OFFSET;
 				counter++;
 			}
-			
+
 			foreach (var road in intersection.RoadsOut)
 			{
 				roadVectors[counter] = road.End - road.Start;
-				road.MeshStart = road.Start + roadVectors[counter].normalized * (roadLength - ROAD_MESH_OFFSET);
+				road.MeshStart = road.Start + roadVectors[counter].normalized * ROAD_MESH_OFFSET;
 				counter++;
 			}
 
@@ -156,7 +66,7 @@ public class Roadifier : MonoBehaviour {
 					oppositeIdx = i;
 				}
 			}
-			
+
 			var triangles = new List<int>();
 			var roadVectorsSorted = new Vector3[4];
 			roadVectorsSorted[0] = roadVectors[0];
@@ -169,41 +79,14 @@ public class Roadifier : MonoBehaviour {
 				{
 					continue;
 				}
-				
+
 				// Vector3.Cross.magnitude --> sin(alfa), alfa --> angle between roadvec[0] and roadvec[i]
 				var y = (roadWidth / 2) / Vector3.Cross(roadVectors[0].normalized, roadVectors[i].normalized).magnitude;
 				Vector3 cornerPoint = (roadVectors[0].normalized + roadVectors[i].normalized) * y + intersection.Center;
 				cornerPoints.Add(cornerPoint);
 				roadVectorsSorted[j] = roadVectors[i];
 				j = 1;
-
-//				var point = cornerPoint + roadVectors[0].normalized * (roadWidth / 2);
-//				cornerPoints.Add(point);
-//				
-//				var point1 = cornerPoint + roadVectors[i].normalized * (roadWidth / 2);
-//				cornerPoints.Add(point1);
 			}
-			
-			
-
-//			if (Vector3.Cross(cornerPoints[1] - cornerPoints[0], cornerPoints[3] - cornerPoints[0]).y > 0)
-//			{
-//				triangles.Add(0);
-//				triangles.Add(1);
-//				triangles.Add(3);
-//				triangles.Add(1);
-//				triangles.Add(4);
-//				triangles.Add(3);
-//			}
-//			else
-//			{
-//				triangles.Add(1);
-//				triangles.Add(0);
-//				triangles.Add(3);
-//				triangles.Add(1);
-//				triangles.Add(3);
-//				triangles.Add(4);
-//			}
 
 			for (int i = 1; i < roadVectors.Length; i++)
 			{
@@ -211,39 +94,35 @@ public class Roadifier : MonoBehaviour {
 				{
 					continue;
 				}
-				
+
 				// Vector3.Cross.magnitude --> sin(alfa), alfa --> angle between roadvec[0] and roadvec[i]
-				var y = (roadWidth / 2) / Vector3.Cross(roadVectors[oppositeIdx].normalized, roadVectors[i].normalized).magnitude;
-				Vector3 cornerPoint = (roadVectors[oppositeIdx].normalized + roadVectors[i].normalized) * y + intersection.Center;
+				var y = (roadWidth / 2) /
+				        Vector3.Cross(roadVectors[oppositeIdx].normalized, roadVectors[i].normalized).magnitude;
+				Vector3 cornerPoint = (roadVectors[oppositeIdx].normalized + roadVectors[i].normalized) * y +
+				                      intersection.Center;
 				cornerPoints.Add(cornerPoint);
-				
-//				var point = cornerPoint + roadVectors[oppositeIdx].normalized * (roadWidth / 2);
-//				cornerPoints.Add(point);
-//				
-//				var point1 = cornerPoint + roadVectors[i].normalized * (roadWidth / 2);
-//				cornerPoints.Add(point1);
 			}
-			
-			var nextPoints = new [] {1, 3, 0, 2};
+
+			var nextPoints = new[] {1, 3, 0, 2};
 			var intersectionPoints = new List<Vector3>(cornerPoints);
 			for (int i = 0; i < cornerPoints.Count; i++)
 			{
-				int nextI = nextPoints[i];//i != cornerPoints.Count - 1 ? i + 1 : 0;
+				int nextI = nextPoints[i];
 				Vector3 d = (intersection.Center + roadVectorsSorted[i].normalized * ROAD_MESH_OFFSET)
 				            - (cornerPoints[i] + cornerPoints[nextI]) / 2;
 
 
 				Vector3 x = cornerPoints[i] - cornerPoints[nextI];
 				intersectionPoints.Add(cornerPoints[i] + (d -
-				                   x.magnitude / 2 * 
-				                   Vector3.Dot(x.normalized, roadVectorsSorted[i].normalized) * 
-				                   roadVectorsSorted[i].normalized));
-				intersectionPoints.Add(cornerPoints[nextI] + (d + 
-				                                          x.magnitude / 2 * 
-				                                          Vector3.Dot(x.normalized, roadVectorsSorted[i].normalized) * 
+				                                          x.magnitude / 2 *
+				                                          Vector3.Dot(x.normalized, roadVectorsSorted[i].normalized) *
 				                                          roadVectorsSorted[i].normalized));
+				intersectionPoints.Add(cornerPoints[nextI] + (d +
+				                                              x.magnitude / 2 *
+				                                              Vector3.Dot(x.normalized, roadVectorsSorted[i].normalized) *
+				                                              roadVectorsSorted[i].normalized));
 			}
-			
+
 			if (Vector3.Cross(cornerPoints[1] - cornerPoints[0], cornerPoints[2] - cornerPoints[0]).y > 0)
 			{
 				triangles.Add(0);
@@ -252,28 +131,28 @@ public class Roadifier : MonoBehaviour {
 				triangles.Add(1);
 				triangles.Add(3);
 				triangles.Add(2);
-				
+
 				triangles.Add(4);
 				triangles.Add(5);
 				triangles.Add(0);
 				triangles.Add(5);
 				triangles.Add(1);
 				triangles.Add(0);
-				
+
 				triangles.Add(6);
 				triangles.Add(7);
 				triangles.Add(1);
 				triangles.Add(7);
 				triangles.Add(3);
 				triangles.Add(1);
-				
+
 				triangles.Add(10);
 				triangles.Add(11);
 				triangles.Add(3);
 				triangles.Add(11);
 				triangles.Add(2);
 				triangles.Add(3);
-				
+
 				triangles.Add(8);
 				triangles.Add(9);
 				triangles.Add(2);
@@ -289,28 +168,28 @@ public class Roadifier : MonoBehaviour {
 				triangles.Add(1);
 				triangles.Add(2);
 				triangles.Add(3);
-				
+
 				triangles.Add(5);
 				triangles.Add(4);
 				triangles.Add(0);
 				triangles.Add(5);
 				triangles.Add(0);
 				triangles.Add(1);
-				
+
 				triangles.Add(7);
 				triangles.Add(6);
 				triangles.Add(1);
 				triangles.Add(7);
 				triangles.Add(1);
 				triangles.Add(3);
-				
+
 				triangles.Add(11);
 				triangles.Add(10);
 				triangles.Add(3);
 				triangles.Add(11);
 				triangles.Add(3);
 				triangles.Add(2);
-				
+
 				triangles.Add(9);
 				triangles.Add(8);
 				triangles.Add(2);
@@ -319,103 +198,26 @@ public class Roadifier : MonoBehaviour {
 				triangles.Add(0);
 			}
 
-//			if (Vector3.Cross(cornerPoints[10] - cornerPoints[9], cornerPoints[6] - cornerPoints[9]).y > 0)
-//			{
-//				triangles.Add(9);
-//				triangles.Add(10);
-//				triangles.Add(6);
-//				triangles.Add(10);
-//				triangles.Add(7);
-//				triangles.Add(6);
-//			}
-//			else
-//			{
-//				triangles.Add(10);
-//				triangles.Add(9);
-//				triangles.Add(6);
-//				triangles.Add(10);
-//				triangles.Add(6);
-//				triangles.Add(7);
-//			}
-//			
-//			if (Vector3.Cross(cornerPoints[0] - cornerPoints[6], cornerPoints[9] - cornerPoints[6]).y > 0)
-//			{
-//				triangles.Add(6);
-//				triangles.Add(0);
-//				triangles.Add(9);
-//				triangles.Add(0);
-//				triangles.Add(3);
-//				triangles.Add(9);
-//			}
-//			else
-//			{
-//				triangles.Add(0);
-//				triangles.Add(6);
-//				triangles.Add(9);
-//				triangles.Add(0);
-//				triangles.Add(9);
-//				triangles.Add(3);
-//			}
-//			
-//			if (Vector3.Cross(cornerPoints[8] - cornerPoints[6], cornerPoints[0] - cornerPoints[6]).y > 0)
-//			{
-//				triangles.Add(6);
-//				triangles.Add(8);
-//				triangles.Add(0);
-//				triangles.Add(8);
-//				triangles.Add(2);
-//				triangles.Add(0);
-//			}
-//			else
-//			{
-//				triangles.Add(8);
-//				triangles.Add(6);
-//				triangles.Add(0);
-//				triangles.Add(8);
-//				triangles.Add(0);
-//				triangles.Add(2);
-//			}
-//			
-//			if (Vector3.Cross(cornerPoints[5] - cornerPoints[3], cornerPoints[9] - cornerPoints[3]).y > 0)
-//			{
-//				triangles.Add(3);
-//				triangles.Add(5);
-//				triangles.Add(9);
-//				triangles.Add(5);
-//				triangles.Add(11);
-//				triangles.Add(9);
-//			}
-//			else
-//			{
-//				triangles.Add(5);
-//				triangles.Add(3);
-//				triangles.Add(9);
-//				triangles.Add(5);
-//				triangles.Add(9);
-//				triangles.Add(11);
-//			}
-
 			var boundingBox = GetBoundingBox(cornerPoints.ToArray());
 			if ((boundingBox.height > boundingBox.width ? boundingBox.height : boundingBox.width) > boxMaxSide)
 			{
 				boxMaxSide = boundingBox.height > boundingBox.width ? boundingBox.height : boundingBox.width;
 			}
-			
+
 			var uvs = new Vector2[intersectionPoints.Count];
 			for (int i = 0; i < intersectionPoints.Count; i++)
 			{
 				uvs[i] = new Vector2(intersectionPoints[i].x - boundingBox.x, intersectionPoints[i].z - boundingBox.y);
 			}
-			
+
 			var mesh = new Mesh();
 			mesh.vertices = intersectionPoints.ToArray();
 			mesh.triangles = triangles.ToArray();
 			mesh.uv = uvs;
-			
+
 			interMeshes.Add(mesh);
 			mesh.RecalculateNormals();
 			//CreateGameObject(mesh);
-			interMeshes.AddRange(GenerateTriIntersections(intersections));
 		}
 
 		foreach (var mesh in interMeshes)
@@ -427,8 +229,8 @@ public class Roadifier : MonoBehaviour {
 			}
 
 			mesh.uv = newUvs;
-
 		}
+
 		return interMeshes;
 	}
 
@@ -446,14 +248,16 @@ public class Roadifier : MonoBehaviour {
 			var counter = 0;
 			foreach (var road in intersection.RoadsIn)
 			{
-				roadVectors[counter++] = road.Start - road.End;
-				//road.MeshEnd = road.End + roadVectors[counter - 1].normalized * (roadWidth / 2);
+				roadVectors[counter] = road.Start - road.End;
+				//road.MeshEnd = road.End + roadVectors[counter].normalized * ROAD_MESH_OFFSET;
+				counter++;
 			}
-
+			
 			foreach (var road in intersection.RoadsOut)
 			{
-				roadVectors[counter++] = road.End - road.Start;
-				//road.MeshStart = road.Start + roadVectors[counter - 1].normalized * (roadWidth / 2);
+				roadVectors[counter] = road.End - road.Start;
+				//road.MeshStart = road.Start + roadVectors[counter].normalized * ROAD_MESH_OFFSET;
+				counter++;
 			}
 			
 			//find the two opposite roads
@@ -667,9 +471,7 @@ public class Roadifier : MonoBehaviour {
 		return new Rect(min.x, min.z, max.x - min.x, max.z - min.z);
 	}
 
-	public void GenerateRoad(List<Vector3> points, Terrain terrain) {
-		
-		
+	public Mesh GenerateRoad(List<Vector3> points, Terrain terrain = null) {
 		// parameters validation
 		//ok
 		CheckParams(points, smoothingFactor);
@@ -798,8 +600,8 @@ public class Roadifier : MonoBehaviour {
 		mesh.SetUVs(0, uvs.ToList());
 		mesh.triangles = triangles.ToArray();
 		mesh.RecalculateNormals();
-
 		CreateGameObject(mesh);
+		return mesh;
 	}
 
 	private void AddSmoothingPoints(List<Vector3> points) {
@@ -829,9 +631,10 @@ public class Roadifier : MonoBehaviour {
 	}
 
 	public void  CreateGameObject ( Mesh mesh ){
+		var parent = GameObject.Find("Road meshes");
 		GameObject obj = new GameObject("Roadifier Road", typeof(MeshRenderer), typeof(MeshFilter), typeof(MeshCollider));
 		obj.GetComponent<MeshFilter>().mesh = mesh;
-		obj.transform.SetParent(transform);
+		obj.transform.SetParent(parent.transform);
 		obj.transform.position += Vector3.up*0.2f;
 		
 		MeshRenderer renderer = obj.GetComponent<MeshRenderer>();
@@ -867,5 +670,51 @@ public class Roadifier : MonoBehaviour {
 		if (smoothingFactor < 0.0f || smoothingFactor > 0.5f) {
 			throw new Exception("Smoothing factor should be between 0 and 0.5f");
 		}
+	}
+
+	public List<Mesh> GenerateRoadMeshes(List<Intersection> intersections)
+	{
+		Stack<Road> roadsToVisit = new Stack<Road>();
+
+		foreach (var intersection in intersections)
+		{
+			if (intersection.RoadsIn.Count + intersection.RoadsOut.Count > 2)
+			{
+				foreach (var roadOut in intersection.RoadsOut)
+				{
+					roadsToVisit.Push(roadOut);
+				}	
+			}
+		}
+
+		var meshes = new List<Mesh>();
+		var roadPoints = new List<Vector3>();
+		while (roadsToVisit.Count != 0)
+		{
+			var road = roadsToVisit.Pop();
+			roadPoints.Add(road.MeshStart);
+
+			if (road.NextIntersection.RoadsIn.Count + road.NextIntersection.RoadsOut.Count > 2
+				|| road.NextIntersection.RoadsIn.Count == 1 && road.NextIntersection.RoadsOut.Count == 0)
+			{
+				roadPoints.Add(road.MeshEnd);
+				meshes.Add(GenerateRoad(roadPoints));
+				roadPoints.Clear();
+			}
+			else if(road.NextIntersection.RoadsIn.Count + road.NextIntersection.RoadsOut.Count == 2)
+			{
+				if (road.NextIntersection.RoadsOut.Count == 1)
+				{
+					roadsToVisit.Push(road.NextIntersection.RoadsOut[0]);
+				}
+				else
+				{
+					roadPoints.Add(road.MeshEnd);
+					meshes.Add(GenerateRoad(roadPoints));
+					roadPoints.Clear();
+				}
+			}
+		}
+		return meshes;
 	}
 }
