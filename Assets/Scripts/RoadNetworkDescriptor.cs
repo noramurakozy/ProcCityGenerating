@@ -18,7 +18,7 @@ public class RoadNetworkDescriptor
 
     public int normalBranchTimeDelayFromHighway = 5;
 
-    public int highwaySegmentLength = 3;
+    public int highwaySegmentLength = 2;
 
     public int branchSegmentLength = 2;
 

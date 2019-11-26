@@ -59,7 +59,7 @@ namespace Editor
                 roadNetwork.UpdateCity();
             }
 
-            if (GUILayout.Button("Generate textured city (caution)"))
+            if (GUILayout.Button("Generate textured city"))
             {
                 roadNetwork.GenerateTexturedCity();
             }

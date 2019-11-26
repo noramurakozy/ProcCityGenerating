@@ -55,51 +55,26 @@ public class Roadifier : MonoBehaviour {
 				counter++;
 			}
 
-			int oppositeIdx = 0;
-			float maxAngle = 0;
-			for (int i = 1; i < roadVectors.Length; i++)
-			{
-				var angle = Vector3.Angle(roadVectors[0], roadVectors[i]);
-				if (angle > maxAngle)
-				{
-					maxAngle = angle;
-					oppositeIdx = i;
-				}
-			}
+			roadVectors = SortVectorsBasedOnAngle(roadVectors);
 
 			var triangles = new List<int>();
-			var roadVectorsSorted = new Vector3[4];
-			roadVectorsSorted[0] = roadVectors[0];
-			roadVectorsSorted[3] = roadVectors[oppositeIdx];
-
-			var j = 2;
-			for (int i = 1; i < roadVectors.Length; i++)
+			for (var i = 0; i < roadVectors.Length; i++)
 			{
-				if (i == oppositeIdx)
-				{
-					continue;
-				}
-
+				int nextIdx = (i+1) % roadVectors.Length;
 				// Vector3.Cross.magnitude --> sin(alfa), alfa --> angle between roadvec[0] and roadvec[i]
-				var y = (roadWidth / 2) / Vector3.Cross(roadVectors[0].normalized, roadVectors[i].normalized).magnitude;
-				Vector3 cornerPoint = (roadVectors[0].normalized + roadVectors[i].normalized) * y + intersection.Center;
-				cornerPoints.Add(cornerPoint);
-				roadVectorsSorted[j] = roadVectors[i];
-				j = 1;
-			}
-
-			for (int i = 1; i < roadVectors.Length; i++)
-			{
-				if (i == oppositeIdx)
+				//var y = (roadWidth / 2) / Vector3.Cross(roadVectors[i].normalized, roadVectors[nextIdx].normalized).magnitude;
+				Vector3 cornerPoint;
+				if (Mathf.Approximately(Mathf.Abs(Vector3.Dot(roadVectors[i].normalized, roadVectors[nextIdx].normalized)),1))
 				{
-					continue;
+					cornerPoint = Vector3.Cross(roadVectors[nextIdx], Vector3.up).normalized * (roadWidth / 2) + intersection.Center;
 				}
-
-				// Vector3.Cross.magnitude --> sin(alfa), alfa --> angle between roadvec[0] and roadvec[i]
-				var y = (roadWidth / 2) /
-				        Vector3.Cross(roadVectors[oppositeIdx].normalized, roadVectors[i].normalized).magnitude;
-				Vector3 cornerPoint = (roadVectors[oppositeIdx].normalized + roadVectors[i].normalized) * y +
-				                      intersection.Center;
+				else
+				{
+					var signedAngle1 = Vector3.SignedAngle(roadVectors[i], roadVectors[nextIdx], Vector3.up);
+					var y = (roadWidth / 2) / Mathf.Sin(signedAngle1 * Mathf.Deg2Rad);
+					cornerPoint = (roadVectors[i].normalized + roadVectors[nextIdx].normalized) * y +
+					              intersection.Center;
+				}
 				cornerPoints.Add(cornerPoint);
 			}
 
@@ -107,94 +82,56 @@ public class Roadifier : MonoBehaviour {
 			var intersectionPoints = new List<Vector3>(cornerPoints);
 			for (int i = 0; i < cornerPoints.Count; i++)
 			{
-				int nextI = nextPoints[i];
-				Vector3 d = (intersection.Center + roadVectorsSorted[i].normalized * ROAD_MESH_OFFSET)
+				int nextI = (i+1) % cornerPoints.Count;
+				Vector3 d = (intersection.Center + roadVectors[nextI].normalized * ROAD_MESH_OFFSET)
 				            - (cornerPoints[i] + cornerPoints[nextI]) / 2;
 
 
 				Vector3 x = cornerPoints[i] - cornerPoints[nextI];
 				intersectionPoints.Add(cornerPoints[i] + (d -
 				                                          x.magnitude / 2 *
-				                                          Vector3.Dot(x.normalized, roadVectorsSorted[i].normalized) *
-				                                          roadVectorsSorted[i].normalized));
+				                                          Vector3.Dot(x.normalized, roadVectors[nextI].normalized) *
+				                                          roadVectors[nextI].normalized));
 				intersectionPoints.Add(cornerPoints[nextI] + (d +
 				                                              x.magnitude / 2 *
-				                                              Vector3.Dot(x.normalized, roadVectorsSorted[i].normalized) *
-				                                              roadVectorsSorted[i].normalized));
+				                                              Vector3.Dot(x.normalized, roadVectors[nextI].normalized) *
+				                                              roadVectors[nextI].normalized));
 			}
 
-			if (Vector3.Cross(cornerPoints[1] - cornerPoints[0], cornerPoints[2] - cornerPoints[0]).y > 0)
 			{
 				triangles.Add(0);
 				triangles.Add(1);
 				triangles.Add(2);
-				triangles.Add(1);
-				triangles.Add(3);
 				triangles.Add(2);
+				triangles.Add(3);
+				triangles.Add(0);
 
+				triangles.Add(0);
 				triangles.Add(4);
 				triangles.Add(5);
 				triangles.Add(0);
 				triangles.Add(5);
 				triangles.Add(1);
-				triangles.Add(0);
 
+				triangles.Add(1);
 				triangles.Add(6);
 				triangles.Add(7);
 				triangles.Add(1);
 				triangles.Add(7);
-				triangles.Add(3);
-				triangles.Add(1);
-
-				triangles.Add(10);
-				triangles.Add(11);
-				triangles.Add(3);
-				triangles.Add(11);
 				triangles.Add(2);
-				triangles.Add(3);
 
+				triangles.Add(2);
 				triangles.Add(8);
 				triangles.Add(9);
 				triangles.Add(2);
 				triangles.Add(9);
-				triangles.Add(0);
-				triangles.Add(2);
-			}
-			else
-			{
-				triangles.Add(1);
-				triangles.Add(0);
-				triangles.Add(2);
-				triangles.Add(1);
-				triangles.Add(2);
 				triangles.Add(3);
 
-				triangles.Add(5);
-				triangles.Add(4);
-				triangles.Add(0);
-				triangles.Add(5);
-				triangles.Add(0);
-				triangles.Add(1);
-
-				triangles.Add(7);
-				triangles.Add(6);
-				triangles.Add(1);
-				triangles.Add(7);
-				triangles.Add(1);
 				triangles.Add(3);
-
-				triangles.Add(11);
 				triangles.Add(10);
-				triangles.Add(3);
 				triangles.Add(11);
 				triangles.Add(3);
-				triangles.Add(2);
-
-				triangles.Add(9);
-				triangles.Add(8);
-				triangles.Add(2);
-				triangles.Add(9);
-				triangles.Add(2);
+				triangles.Add(11);
 				triangles.Add(0);
 			}
 
@@ -232,6 +169,20 @@ public class Roadifier : MonoBehaviour {
 		}
 
 		return interMeshes;
+	}
+
+	private Vector3[] SortVectorsBasedOnAngle(Vector3[] roadVectors)
+	{
+		Array.Sort(roadVectors, (v1, v2) =>
+		{
+			var signedAngle1 = Vector3.SignedAngle(roadVectors[0], v1, Vector3.up);
+			var signedAngle2 = Vector3.SignedAngle(roadVectors[0], v2, Vector3.up);
+			var angle1 = signedAngle1 >= 0 ? signedAngle1 : 360 + signedAngle1;
+			var angle2 = signedAngle2 >= 0 ? signedAngle2 : 360 + signedAngle2;
+			return angle1.CompareTo(angle2);
+		});
+
+		return roadVectors;
 	}
 
 	private IEnumerable<Mesh> GenerateTriIntersections(List<Intersection> intersections)
@@ -698,7 +649,7 @@ public class Roadifier : MonoBehaviour {
 				|| road.NextIntersection.RoadsIn.Count == 1 && road.NextIntersection.RoadsOut.Count == 0)
 			{
 				roadPoints.Add(road.MeshEnd);
-				meshes.Add(GenerateRoad(roadPoints));
+				meshes.Add(GenerateRoad(roadPoints, Terrain.activeTerrain));
 				roadPoints.Clear();
 			}
 			else if(road.NextIntersection.RoadsIn.Count + road.NextIntersection.RoadsOut.Count == 2)
@@ -710,7 +661,7 @@ public class Roadifier : MonoBehaviour {
 				else
 				{
 					roadPoints.Add(road.MeshEnd);
-					meshes.Add(GenerateRoad(roadPoints));
+					meshes.Add(GenerateRoad(roadPoints, Terrain.activeTerrain));
 					roadPoints.Clear();
 				}
 			}
