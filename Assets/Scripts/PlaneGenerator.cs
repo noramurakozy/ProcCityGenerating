@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class PlaneGenerator : MonoBehaviour
 {
@@ -24,6 +25,7 @@ public class PlaneGenerator : MonoBehaviour
         Mesh mesh;
         GetComponent<MeshFilter>().mesh = mesh = new Mesh();
         mesh.name = "Procedural Grid";
+        mesh.indexFormat = IndexFormat.UInt32;
         vertices = new Vector3[(xSize + 1) * (zSize + 1)];
         var uv = new Vector2[(xSize + 1) * (zSize + 1)];
         for (int i = 0, y = 0; y <= zSize; y++)

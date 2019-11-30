@@ -485,18 +485,24 @@ public class Roadifier : MonoBehaviour {
 
 			Vector3 terrainNormal1 = Vector3.up; // default normal: straight up
 			Vector3 terrainNormal2 = Vector3.up; // default normal: straight up
-			if (terrain) {
+			var terrainCollider = terrain.GetComponent<Collider>();
+			if (terrain != null) {
 				// if there's a terrain, calculate the actual normals
 				RaycastHit hit;
 				Ray ray;
 
 				ray = new Ray(currentPoint + Vector3.up, Vector3.down);
-				terrain.GetComponent<Collider>().Raycast(ray, out hit, 100.0f);
+				terrainCollider.Raycast(ray, out hit, 100.0f);
 				terrainNormal1 = hit.normal;
+//				Debug.Log(terrainNormal1.x + " " + terrainNormal1.y + " " + terrainNormal1.z);
 
 				ray = new Ray(nextPoint + Vector3.up, Vector3.down);
-				terrain.GetComponent<Collider>().Raycast(ray, out hit, 100.0f);
+				terrainCollider.Raycast(ray, out hit, 100.0f);
 				terrainNormal2 = hit.normal;
+//				terrainNormal1 = terrain.terrainData.GetInterpolatedNormal((currentPoint.x-terrain.transform.position.x)/terrain.terrainData.size.x, (currentPoint.z-terrain.transform.position.z)/terrain.terrainData.size.z);
+//				terrainNormal2 = terrain.terrainData.GetInterpolatedNormal((nextPoint.x-terrain.transform.position.x)/terrain.terrainData.size.x, (nextPoint.z-terrain.transform.position.z)/terrain.terrainData.size.z);
+//				Debug.Log(terrainNormal1.x + " " + terrainNormal1.y + " " + terrainNormal1.z);
+				
 			}
 
 			// calculate the normal to the segment, so we can displace 'left' and 'right' of
