@@ -43,7 +43,7 @@ public class RoadNetwork : MonoBehaviour
         oldTownRoadSteps = descriptor.numOfSteps - (descriptor.numOfSteps * (descriptor.modernCityStructureExtent / 100f));
         modernRoadSteps = descriptor.numOfSteps - oldTownRoadSteps;
         //UnityEngine.Random.InitState(12345678);
-        UnityEngine.Random.InitState(3456789);
+        //UnityEngine.Random.InitState(3456789);
         descriptor.switchToOldTownThreshold = oldTownRoadSteps.Equals(descriptor.numOfSteps) ? 8 : 4;
         var numOfStepsToDecrease = descriptor.numOfSteps;
         roadCounters = new[] {0, 0};
@@ -190,12 +190,14 @@ public class RoadNetwork : MonoBehaviour
 
             if (road.IsHighway)
             {
-                roadView.GetComponent<LineRenderer>().endColor = Color.magenta;
+                //roadView.GetComponent<LineRenderer>().endColor = Color.magenta;
+                roadView.GetComponent<LineRenderer>().endColor = descriptor.highwayColor;
                 roadView.GetComponent<LineRenderer>().startColor = descriptor.highwayColor;
             }
             else
             {
-                roadView.GetComponent<LineRenderer>().endColor = Color.green;
+                //roadView.GetComponent<LineRenderer>().endColor = Color.green;
+                roadView.GetComponent<LineRenderer>().endColor = roadView.road.Color;
                 roadView.GetComponent<LineRenderer>().startColor = roadView.road.Color;
             }
             roadView.Draw();
@@ -321,6 +323,7 @@ public class RoadNetwork : MonoBehaviour
             else if (MathHelper.FindDistanceToSegment(road1.Start, road2.Start, road2.End, out _, out _) < descriptor.roadSnapDistance)
             {
                 road1.Start = Vector3.Distance(road1.Start, road2.Start) < Vector3.Distance(road1.Start, road2.End) ? road2.Start : road2.End;
+                road1.Color = Color.magenta;
             }
         }
         
@@ -478,6 +481,13 @@ public class RoadNetwork : MonoBehaviour
 
         var intersectionMeshes = gameObject.GetComponent<Roadifier>().GenerateIntersections(intersections);
         var roadMeshes = gameObject.GetComponent<Roadifier>().GenerateRoadMeshes(intersections);
+        var initRoadMeshes = gameObject.GetComponent<Roadifier>().GenerateRoad(new List<Vector3>
+        {
+            finalSegments[0].MeshEnd,
+            finalSegments[0].MeshStart,
+            finalSegments[1].MeshEnd
+        });
+        roadMeshes.Add(initRoadMeshes);
 
         CombineInstance[] intersectionCombine = new CombineInstance[intersectionMeshes.Count];
         int i = 0;
@@ -525,6 +535,10 @@ public class RoadNetwork : MonoBehaviour
         finalMesh.subMeshCount = 2;
         finalMesh.name = "Road mesh";
         finalMesh.CombineMeshes(combine, false);
+        var verticesToAdapt = finalMesh.vertices;
+        Roadifier.AdaptPointsToTerrainHeight(verticesToAdapt, Terrain.activeTerrain);
+        finalMesh.vertices = verticesToAdapt;
+        
         GetComponent<MeshFilter>().sharedMesh = finalMesh;
     }
     
