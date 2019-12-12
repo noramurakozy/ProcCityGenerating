@@ -12,11 +12,9 @@ using Color = UnityEngine.Color;
 public class Roadifier : MonoBehaviour {
 	
 	public float roadWidth = 1.0f;
-	public float roadLength = 2.0f;
 	public float smoothingFactor = 0.2f;
 	public int smoothingIterations = 3;
-	public float intersectionOffset = 0.5f;
-	public Material material;
+	private Material material;
 	public static float terrainClearance = 0.07f;
 	private Mesh mesh;
 	private Vector2[] uvs;
@@ -71,8 +69,8 @@ public class Roadifier : MonoBehaviour {
 				else
 				{
 					var signedAngle1 = Vector3.SignedAngle(roadVectors[i], roadVectors[nextIdx], Vector3.up);
-					var y = (roadWidth / 2) / Mathf.Sin(signedAngle1 * Mathf.Deg2Rad);
-					cornerPoint = (roadVectors[i].normalized + roadVectors[nextIdx].normalized) * y +
+					var y = (roadWidth / 2) / Mathf.Sin((signedAngle1/2) * Mathf.Deg2Rad);
+					cornerPoint = (roadVectors[i].normalized + roadVectors[nextIdx].normalized).normalized * y +
 					              intersection.Center;
 				}
 				cornerPoints.Add(cornerPoint);
@@ -89,8 +87,7 @@ public class Roadifier : MonoBehaviour {
 
 				Vector3 x = cornerPoints[i] - cornerPoints[nextI];
 				intersectionPoints.Add(cornerPoints[i] + (d -
-				                                          x.magnitude / 2 *
-				                                          Vector3.Dot(x.normalized, roadVectors[nextI].normalized) *
+				                                          x.magnitude / 2 * Vector3.Dot(x.normalized, roadVectors[nextI].normalized) *
 				                                          roadVectors[nextI].normalized));
 				intersectionPoints.Add(cornerPoints[nextI] + (d +
 				                                              x.magnitude / 2 *
@@ -462,7 +459,7 @@ public class Roadifier : MonoBehaviour {
 		mesh.SetUVs(0, uvs.ToList());
 		mesh.triangles = triangles.ToArray();
 		mesh.RecalculateNormals();
-		CreateGameObject(mesh);
+		//CreateGameObject(mesh);
 		return mesh;
 	}
 
@@ -486,6 +483,7 @@ public class Roadifier : MonoBehaviour {
 	}
 
 	public static void AdaptPointsToTerrainHeight(Vector3[] points, Terrain terrain) {
+		
 		for (int i = 0; i < points.Length; i++) {
 			Vector3 point = points[i];
 			points[i] = new Vector3(point.x, terrain.transform.position.y + terrainClearance + terrain.SampleHeight(new Vector3(point.x, 0, point.z)), point.z);

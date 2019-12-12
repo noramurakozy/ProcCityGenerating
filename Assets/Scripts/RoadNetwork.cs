@@ -9,6 +9,9 @@ using UnityEngine;
 using Color = UnityEngine.Color;
 using Debug = UnityEngine.Debug;
 
+[RequireComponent(typeof(Roadifier))]
+[RequireComponent(typeof(MeshRenderer))]
+[RequireComponent(typeof(MeshFilter))]
 public class RoadNetwork : MonoBehaviour
 {
     private QuadTreeRect<Road> qTree;
@@ -40,18 +43,18 @@ public class RoadNetwork : MonoBehaviour
         roadMeshesParent = new GameObject("Road meshes");
         roadMeshesParent.transform.SetParent(transform);
         
-        oldTownRoadSteps = descriptor.numOfSteps - (descriptor.numOfSteps * (descriptor.modernCityStructureExtent / 100f));
-        modernRoadSteps = descriptor.numOfSteps - oldTownRoadSteps;
+        oldTownRoadSteps = descriptor.numOfRoadSegments - (descriptor.numOfRoadSegments * (descriptor.modernCityStructureExtent / 100f));
+        modernRoadSteps = descriptor.numOfRoadSegments - oldTownRoadSteps;
         //UnityEngine.Random.InitState(12345678);
         //UnityEngine.Random.InitState(3456789);
-        descriptor.switchToOldTownThreshold = oldTownRoadSteps.Equals(descriptor.numOfSteps) ? 8 : 4;
-        var numOfStepsToDecrease = descriptor.numOfSteps;
+        descriptor.switchToOldTownThreshold = oldTownRoadSteps.Equals(descriptor.numOfRoadSegments) ? 8 : 4;
+        var numOfStepsToDecrease = descriptor.numOfRoadSegments;
         roadCounters = new[] {0, 0};
         DestroyAllObjects();
         qTree = new QuadTreeRect<Road>(new RectangleF(-5000, -5000, 10000, 10000));
         DrawMap((int) descriptor.mapWidth / descriptor.heatMapScale, (int) descriptor.mapHeight / descriptor.heatMapScale, PlaneType.Population);
         //DrawMap((int) descriptor.mapWidth / descriptor.HeatMapScale, (int) descriptor.mapHeight / descriptor.HeatMapScale, PlaneType.District);
-        var startRoadType = oldTownRoadSteps > descriptor.numOfSteps / 2f ? RoadType.OldTown : RoadType.Modern;
+        var startRoadType = oldTownRoadSteps > descriptor.numOfRoadSegments / 2f ? RoadType.OldTown : RoadType.Modern;
         primaryQueue = GetInitialRoads(startRoadType);
         finalSegments = new List<Road>();
         intersections = new List<Intersection>();
@@ -146,13 +149,13 @@ public class RoadNetwork : MonoBehaviour
     {
         return new List<Road>()
         {
-            new Road(new Vector3(descriptor.mapHeight / 2, 0, descriptor.mapWidth / 2), new Vector3(descriptor.mapHeight / 2 + descriptor.highwaySegmentLength, 0, descriptor.mapWidth / 2))
+            new Road(new Vector3(descriptor.mapHeight / 2, 0, descriptor.mapWidth / 2), new Vector3(descriptor.mapHeight / 2 + descriptor.segmentLength, 0, descriptor.mapWidth / 2))
             {
                 Number = 0, 
                 IsHighway = true,
                 Type = startRoadType
             },
-            new Road(new Vector3(descriptor.mapHeight / 2, 0, descriptor.mapWidth / 2), new Vector3(descriptor.mapHeight / 2 - descriptor.highwaySegmentLength, 0, descriptor.mapWidth / 2))
+            new Road(new Vector3(descriptor.mapHeight / 2, 0, descriptor.mapWidth / 2), new Vector3(descriptor.mapHeight / 2 - descriptor.segmentLength, 0, descriptor.mapWidth / 2))
             {
                 Number = 0, 
                 IsHighway = true,
@@ -396,23 +399,23 @@ public class RoadNetwork : MonoBehaviour
             {
                 if (UnityEngine.Random.value < descriptor.highwayBranchProbability)
                 {
-                    var leftAngle = previousRoad.DirectionAngle - descriptor.normalBranchBaseAngle + UnityEngine.Random.Range(-descriptor.defaultRoadRandomAngle, descriptor.defaultRoadRandomAngle);
-                    var leftHighwayBranch = Road.RoadWithDirection(previousRoad.End, leftAngle, descriptor.highwaySegmentLength, 0, previousRoad.IsHighway);
+                    var leftAngle = previousRoad.DirectionAngle - descriptor.normalBranchBaseAngle + UnityEngine.Random.Range(-descriptor.regularRoadRandomAngle, descriptor.regularRoadRandomAngle);
+                    var leftHighwayBranch = Road.RoadWithDirection(previousRoad.End, leftAngle, descriptor.segmentLength, 0, previousRoad.IsHighway);
                     newRoads.Add(leftHighwayBranch);
                     previousRoad.NextRoad = leftHighwayBranch;
                     leftHighwayBranch.PrevRoad = previousRoad;
                 }
                 else if (UnityEngine.Random.value < descriptor.highwayBranchProbability)
                 {
-                    var rightAngle = previousRoad.DirectionAngle + descriptor.normalBranchBaseAngle + UnityEngine.Random.Range(-descriptor.defaultRoadRandomAngle, descriptor.defaultRoadRandomAngle);
-                    var rightHighwayBranch = Road.RoadWithDirection(previousRoad.End, rightAngle, descriptor.highwaySegmentLength, 0, previousRoad.IsHighway);
+                    var rightAngle = previousRoad.DirectionAngle + descriptor.normalBranchBaseAngle + UnityEngine.Random.Range(-descriptor.regularRoadRandomAngle, descriptor.regularRoadRandomAngle);
+                    var rightHighwayBranch = Road.RoadWithDirection(previousRoad.End, rightAngle, descriptor.segmentLength, 0, previousRoad.IsHighway);
                     newRoads.Add(rightHighwayBranch);
                     previousRoad.NextRoad = rightHighwayBranch;
                     rightHighwayBranch.PrevRoad = previousRoad;
                 }
             } 
         }
-        else if (straightPopulation > descriptor.normalBranchPopulationThreshold)
+        else if (straightPopulation > descriptor.regularBranchPopulationThreshold)
         {
             newRoads.Add(straightRoad);
             previousRoad.NextRoad = straightRoad;
@@ -420,7 +423,7 @@ public class RoadNetwork : MonoBehaviour
         }
 
         //secondary road branching 
-        if (straightPopulation > descriptor.normalBranchPopulationThreshold)
+        if (straightPopulation > descriptor.regularBranchPopulationThreshold)
         {
             var timeDelay = 0;
             if (previousRoad.IsHighway)
@@ -428,22 +431,22 @@ public class RoadNetwork : MonoBehaviour
                 timeDelay = descriptor.normalBranchTimeDelayFromHighway;
             }
 
-            if (UnityEngine.Random.value < descriptor.defaultBranchProbability)
+            if (UnityEngine.Random.value < descriptor.regularBranchProbability)
             {
                 var leftAngle = previousRoad.DirectionAngle - descriptor.normalBranchBaseAngle +
-                                UnityEngine.Random.Range(-descriptor.defaultRoadRandomAngle, descriptor.defaultRoadRandomAngle);
+                                UnityEngine.Random.Range(-descriptor.regularRoadRandomAngle, descriptor.regularRoadRandomAngle);
                 var leftBranch =
-                    Road.RoadWithDirection(previousRoad.End, leftAngle, descriptor.branchSegmentLength, timeDelay, false);
+                    Road.RoadWithDirection(previousRoad.End, leftAngle, descriptor.segmentLength, timeDelay, false);
                 newRoads.Add(leftBranch);
                 previousRoad.NextRoad = leftBranch;
                 leftBranch.PrevRoad = previousRoad;
             }
-            else if (UnityEngine.Random.value < descriptor.defaultBranchProbability)
+            else if (UnityEngine.Random.value < descriptor.regularBranchProbability)
             {
                 var rightAngle = previousRoad.DirectionAngle + descriptor.normalBranchBaseAngle +
-                                 UnityEngine.Random.Range(-descriptor.defaultRoadRandomAngle, descriptor.defaultRoadRandomAngle);
+                                 UnityEngine.Random.Range(-descriptor.regularRoadRandomAngle, descriptor.regularRoadRandomAngle);
                 var rightBranch =
-                    Road.RoadWithDirection(previousRoad.End, rightAngle, descriptor.branchSegmentLength, timeDelay, false);
+                    Road.RoadWithDirection(previousRoad.End, rightAngle, descriptor.segmentLength, timeDelay, false);
                 newRoads.Add(rightBranch);
                 previousRoad.NextRoad = rightBranch;
                 rightBranch.PrevRoad = previousRoad;
@@ -535,6 +538,7 @@ public class RoadNetwork : MonoBehaviour
         finalMesh.subMeshCount = 2;
         finalMesh.name = "Road mesh";
         finalMesh.CombineMeshes(combine, false);
+        //it must be copied because 'vertices' only a copy of the original vertices
         var verticesToAdapt = finalMesh.vertices;
         Roadifier.AdaptPointsToTerrainHeight(verticesToAdapt, Terrain.activeTerrain);
         finalMesh.vertices = verticesToAdapt;

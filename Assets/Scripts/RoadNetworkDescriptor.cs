@@ -4,27 +4,25 @@ using UnityEngine;
 [Serializable]
 public class RoadNetworkDescriptor
 {
-    public int numOfSteps = 3000;
+    public int numOfRoadSegments = 500;
 
-    public double defaultBranchProbability = 0.3;
+    public double regularBranchProbability = 0.3;
 
     public double highwayBranchProbability = 0.05;
 
     public double highwayBranchPopulationThreshold = 6;
 
-    public double normalBranchPopulationThreshold = 4;
+    public double regularBranchPopulationThreshold = 4;
     
     public double switchToOldTownThreshold = 4;
 
     public int normalBranchTimeDelayFromHighway = 5;
-
-    public int highwaySegmentLength = 2;
-
-    public int branchSegmentLength = 2;
+    
+    public int segmentLength = 2;
 
     public int highwayRandomAngle = 15;
 
-    public int defaultRoadRandomAngle = 3;
+    public int regularRoadRandomAngle = 3;
     
     public float normalBranchBaseAngle = 90;
     
@@ -48,19 +46,19 @@ public class RoadNetworkDescriptor
     public void SetValuesToOldTown()
     {
         highwayRandomAngle = 15;
-        defaultRoadRandomAngle = 3;
+        regularRoadRandomAngle = 3;
         //roadSnapDistance = 1;
         minBaseAngle = 80;
-        normalBranchPopulationThreshold = 5;
+        regularBranchPopulationThreshold = 5;
     }
      
     public void SetValuesToModern()
     {
         highwayRandomAngle = 2;
-        defaultRoadRandomAngle = 0;
+        regularRoadRandomAngle = 0;
         //roadSnapDistance = 0.3f;
         minBaseAngle = 90;
-        normalBranchPopulationThreshold = 4;
+        regularBranchPopulationThreshold = 4;
     }
 }
 
