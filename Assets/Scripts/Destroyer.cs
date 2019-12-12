@@ -2,7 +2,7 @@
 
 public class Destroyer : MonoBehaviour
 {
-    public static T SafeDestroy<T>(T obj) where T : UnityEngine.Object
+    public static T SafeDestroy<T>(T obj) where T : Object
     {
         if (Application.isEditor)
             DestroyImmediate(obj);

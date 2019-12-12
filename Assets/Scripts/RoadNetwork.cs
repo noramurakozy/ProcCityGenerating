@@ -26,9 +26,6 @@ public class RoadNetwork : MonoBehaviour
 
     [SerializeField]
     private GameObject populationMapBase;
-    
-    [SerializeField]
-    private Terrain terrain;
 
     public RoadNetworkDescriptor descriptor;
     
@@ -84,65 +81,7 @@ public class RoadNetwork : MonoBehaviour
                 });
             }
         }
-
-        //FixIntersectionsWithoutOutRoads();
-
-        //intersections.RemoveAll(intersection => (intersection.RoadsIn.Count + intersection.RoadsOut.Count) < 3);
         DrawSegments();
-        //DrawIntersections();
-    }
-
-    private void FixIntersectionsWithoutOutRoads()
-    {
-        var withoutOutRoads = intersections.FindAll(intersection => intersection.RoadsIn.Count == 2 && intersection.RoadsOut.Count == 0);
-        foreach (var intersection in withoutOutRoads)
-        {
-        	var road1 = intersection.RoadsIn[0];
-            
-            var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            sphere.transform.position = road1.End;
-            sphere.transform.localScale = Vector3.one * 0.1f;
-            
-        	var roadStart = new Vector3(road1.Start.x, road1.Start.y, road1.Start.z);
-        	var roadEnd = new Vector3(road1.End.x, road1.End.y, road1.End.z);
-        	var roadPrevIntersection = road1.PrevIntersection;
-        	var roadNextIntersection = road1.NextIntersection;
-        	
-        	road1.Start = roadEnd;
-        	road1.End = roadStart;
-
-            intersection.RoadsIn.Remove(road1);
-            intersection.RoadsOut.Add(road1);
-            
-            road1.PrevIntersection = roadNextIntersection;
-            road1.NextIntersection = roadPrevIntersection;
-
-            road1.PrevIntersection.RoadsOut.Remove(road1);
-            road1.PrevIntersection.RoadsIn.Add(road1);
-            
-            var sphere1 = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            sphere1.transform.position = road1.End;
-            sphere1.transform.localScale = Vector3.one * 0.1f;
-            
-            var sphere2 = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            sphere2.transform.position = road1.MeshEnd;
-            sphere2.transform.localScale = Vector3.one * 0.2f;
-        }
-    }
-
-    private void DrawIntersections()
-    {
-        foreach (var intersection in intersections)
-        {
-            if (intersection.CenterCornerPoints != null)
-            {
-                foreach (var cornerPoint in intersection.CenterCornerPoints)
-                {
-                    var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                    sphere.transform.position = cornerPoint ?? Vector3.zero;
-                }
-            }
-        }
     }
 
     private List<Road> GetInitialRoads(RoadType startRoadType)
@@ -167,11 +106,9 @@ public class RoadNetwork : MonoBehaviour
 
     private void DestroyAllObjects()
     {
-        //plane.gameobjectre kell
         var planesInHierarchy = FindObjectsOfType<PlaneGenerator>();
         var roads = GameObject.Find("Roads");
         
-        //futtatas kozben nem lesz jo
         Destroyer.SafeDestroy(roads);
 
         for (var i = 0; i < planesInHierarchy.Length; i++)
@@ -188,27 +125,20 @@ public class RoadNetwork : MonoBehaviour
             var roadView = Instantiate(roadViewPrefab, roadsParent.transform);
             roadView.Road = road;
 
-            //road.Color = secondaryRoadColor;
             road.Color = road.Type.Equals(RoadType.Modern) ? Color.yellow : Color.cyan;
 
             if (road.IsHighway)
             {
-                //roadView.GetComponent<LineRenderer>().endColor = Color.magenta;
                 roadView.GetComponent<LineRenderer>().endColor = descriptor.highwayColor;
                 roadView.GetComponent<LineRenderer>().startColor = descriptor.highwayColor;
             }
             else
             {
-                //roadView.GetComponent<LineRenderer>().endColor = Color.green;
                 roadView.GetComponent<LineRenderer>().endColor = roadView.road.Color;
                 roadView.GetComponent<LineRenderer>().startColor = roadView.road.Color;
             }
             roadView.Draw();
         }
-        Debug.Log("Old: " + roadCounters[(int)RoadType.OldTown]);
-        Debug.Log("Modern: " + roadCounters[(int)RoadType.Modern]);
-        Debug.Log("Done");
-        Debug.Log("Number of intersections: " + intersections.Count);
     }
 
     private Road CheckLocalConstraints(Road r)
@@ -318,22 +248,11 @@ public class RoadNetwork : MonoBehaviour
         //snap to crossing if the roads are like |--
         if (MathHelper.PointsAreDifferent(road1.Start, road1.End, road2.Start, road2.End))
         {
-            if (MathHelper.FindDistanceToSegment(road1.End, road2.Start, road2.End, out _, out _) < descriptor.roadSnapDistance)
-            {
-                //road1.End = Vector3.Distance(road1.End, road2.Start) < Vector3.Distance(road1.End, road2.End) ? road2.Start : road2.End;
-                //road1 = null;
-            }
-            else if (MathHelper.FindDistanceToSegment(road1.Start, road2.Start, road2.End, out _, out _) < descriptor.roadSnapDistance)
+            if (MathHelper.FindDistanceToSegment(road1.Start, road2.Start, road2.End, out _, out _) < descriptor.roadSnapDistance)
             {
                 road1.Start = Vector3.Distance(road1.Start, road2.Start) < Vector3.Distance(road1.Start, road2.End) ? road2.Start : road2.End;
                 road1.Color = Color.magenta;
             }
-        }
-        
-        if (MathHelper.PointsAreClose(road1.End, road2.End, descriptor.roadSnapDistance))
-        {
-            //road1.End = road2.End;
-            //road1 = null;
         }
     }
 

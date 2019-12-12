@@ -1,10 +1,6 @@
-﻿using QuadTreeLib;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using System.Drawing;
 using System;
-using System.Runtime.CompilerServices;
 using QuadTrees.QTreeRect;
 
 [Serializable]

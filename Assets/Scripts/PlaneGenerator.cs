@@ -1,24 +1,9 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Rendering;
 
 public class PlaneGenerator : MonoBehaviour
 {
     private Vector3[] vertices;
-
-    /*private void OnDrawGizmos()
-    {
-        if (vertices == null)
-        {
-            return;
-        }
-        Gizmos.color = Color.black;
-        for (int i = 0; i < vertices.Length; i++)
-        {
-            Gizmos.DrawSphere(vertices[i], 0.1f);
-        }
-    }*/
 
     public void Generate(int xSize, int zSize, PlaneType planeType)
     {
@@ -77,20 +62,4 @@ public class PlaneGenerator : MonoBehaviour
                 return Mathf.PerlinNoise(i / 60f, j / 60f) * 10;
         }
     }
-
-//    private Color[] DrawHeatMap(int width, int height)
-//    {
-//        var k = 0;
-//        var colors = new Color[(width + 1) * (height + 1)];
-//        for (var i = 0; i < width; i++)
-//        {
-//            for (var j = 0; j < height; j++)
-//            {
-//                var result = GetHeatMapAt(i, j);
-//                colors[k++] = new Color(5 * (float)result / 255.0f, 25.5f * (float)result / 255.0f, 40 / 255.0f);
-//            }
-//        }
-//        return colors;
-//    }
-
 }

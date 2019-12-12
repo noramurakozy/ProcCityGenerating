@@ -76,7 +76,6 @@ public class Roadifier : MonoBehaviour {
 				cornerPoints.Add(cornerPoint);
 			}
 
-			//var nextPoints = new[] {1, 3, 0, 2};
 			var intersectionPoints = new List<Vector3>(cornerPoints);
 			for (int i = 0; i < cornerPoints.Count; i++)
 			{
@@ -331,10 +330,7 @@ public class Roadifier : MonoBehaviour {
 	}
 
 	public Mesh GenerateRoad(List<Vector3> points, Terrain terrain = null) {
-		// parameters validation
-		//ok
 		CheckParams(points, smoothingFactor);
-		//ok
 		if (smoothingFactor > 0.0f) {
 			for (int smoothingPass = 0; smoothingPass < smoothingIterations; smoothingPass++) {
 				AddSmoothingPoints(points);
@@ -346,22 +342,6 @@ public class Roadifier : MonoBehaviour {
 		{
 			roadLength += Vector3.Distance(points[i], points[i + 1]);
 		}
-
-		// if a terrain parameter was specified, replace the y-coordinate
-		// of every point with the height of the terrain (+ an offset)
-//		if (terrain) {
-//			AdaptPointsToTerrainHeight(points, terrain);
-//		}
-
-		Vector3 perpendicularDirection;
-		Vector3 nextPoint;
-		Vector3 nextNextPoint;
-		Vector3 point1;
-		Vector3 point2;
-		Vector3 cornerPoint1;
-		Vector3 cornerPoint2;
-		Vector3 tangent;
-		Vector3 cornerNormal;
 
 		mesh = new Mesh();
 		mesh.name = "Roadifier Road Mesh";
@@ -375,6 +355,8 @@ public class Roadifier : MonoBehaviour {
 		// iterate on defined points
 		foreach(Vector3 currentPoint in points) {
 			// last point
+			Vector3 nextNextPoint;
+			Vector3 nextPoint;
 			if (idx == points.Count - 1) {
 				// no need to do anything in the last point, all triangles
 				// have been created in previous iterations
@@ -392,35 +374,35 @@ public class Roadifier : MonoBehaviour {
 
 			Vector3 terrainNormal1 = Vector3.up; // default normal: straight up
 			Vector3 terrainNormal2 = Vector3.up; // default normal: straight up
-//			if (terrain != null) {
-//				var terrainCollider = terrain.GetComponent<Collider>();
-//				// if there's a terrain, calculate the actual normals
-//				RaycastHit hit;
-//				Ray ray;
-//
-//				ray = new Ray(currentPoint + Vector3.up, Vector3.down);
-//				terrainCollider.Raycast(ray, out hit, 100.0f);
-//				terrainNormal1 = hit.normal;
-//
-//				ray = new Ray(nextPoint + Vector3.up, Vector3.down);
-//				terrainCollider.Raycast(ray, out hit, 100.0f);
-//				terrainNormal2 = hit.normal;
-//			}
+			if (terrain != null) {
+				var terrainCollider = terrain.GetComponent<Collider>();
+				// if there's a terrain, calculate the actual normals
+				RaycastHit hit;
+				Ray ray;
+
+				ray = new Ray(currentPoint + Vector3.up, Vector3.down);
+				terrainCollider.Raycast(ray, out hit, 100.0f);
+				terrainNormal1 = hit.normal;
+
+				ray = new Ray(nextPoint + Vector3.up, Vector3.down);
+				terrainCollider.Raycast(ray, out hit, 100.0f);
+				terrainNormal2 = hit.normal;
+			}
 
 			// calculate the normal to the segment, so we can displace 'left' and 'right' of
 			// the point by half the road width and create our first vertices there
-			perpendicularDirection = (Vector3.Cross(terrainNormal1, nextPoint - currentPoint)).normalized;
-			point1 = currentPoint + perpendicularDirection * roadWidth * 0.5f;
-			point2 = currentPoint - perpendicularDirection * roadWidth * 0.5f;
+			var perpendicularDirection = (Vector3.Cross(terrainNormal1, nextPoint - currentPoint)).normalized;
+			var point1 = currentPoint + perpendicularDirection * roadWidth * 0.5f;
+			var point2 = currentPoint - perpendicularDirection * roadWidth * 0.5f;
 
 			// here comes the tricky part...
 			// we calculate the tangent to the corner between the current segment and the next
-			tangent = ((nextNextPoint - nextPoint).normalized + (nextPoint - currentPoint).normalized).normalized;
-			cornerNormal = (Vector3.Cross(terrainNormal2, tangent)).normalized;
+			var tangent = ((nextNextPoint - nextPoint).normalized + (nextPoint - currentPoint).normalized).normalized;
+			var cornerNormal = (Vector3.Cross(terrainNormal2, tangent)).normalized;
 			// project the normal line to the corner to obtain the correct length
 			var cornerWidth= (roadWidth * 0.5f) / Vector3.Dot(cornerNormal, perpendicularDirection);
-			cornerPoint1 = nextPoint + cornerWidth * cornerNormal;
-			cornerPoint2 = nextPoint - cornerWidth * cornerNormal;
+			var cornerPoint1 = nextPoint + cornerWidth * cornerNormal;
+			var cornerPoint2 = nextPoint - cornerWidth * cornerNormal;
 
 			// first point has no previous vertices set by past iterations
 			if (idx == 0) {
@@ -435,9 +417,7 @@ public class Roadifier : MonoBehaviour {
 			
 			int doubleIdx = (idx) * 2;
 			currentLength += Vector3.Distance(currentPoint, nextPoint);
-			//float completionPercent = (idx+1) / (float) (points.Count - 1);
 			float completionPercent =  currentLength/ roadLength;
-			//float v = 1 - Mathf.Abs(2 * completionPercent - 1);
 			uvs[doubleIdx+2] = new Vector2(0, completionPercent);
 			uvs[doubleIdx+1+2] = new Vector2(1, completionPercent);
 			
@@ -455,7 +435,6 @@ public class Roadifier : MonoBehaviour {
 		}
 
 		mesh.SetVertices(vertices);
-		//mesh.SetUVs(0, GenerateUVs(vertices));
 		mesh.SetUVs(0, uvs.ToList());
 		mesh.triangles = triangles.ToArray();
 		mesh.RecalculateNormals();
@@ -503,23 +482,6 @@ public class Roadifier : MonoBehaviour {
 			materials[i] = material;
 		}
 		renderer.materials = materials;
-	}
-
-	private List<Vector2> GenerateUVs(List<Vector3> vertices) {
-		List<Vector2> uvs = new List<Vector2>();
-
-		for (int vertIdx = 0; vertIdx < vertices.Count; vertIdx++) {
-			if (vertIdx % 4 == 0) {
-				uvs.Add(new Vector2(0, 0));
-			} else if (vertIdx % 4 == 1) {
-				uvs.Add(new Vector2(0, 1));
-			} else if (vertIdx % 4 == 2) {
-				uvs.Add(new Vector2(1, 0));
-			} else {
-				uvs.Add(new Vector2(1, 1));
-			}
-		}
-		return uvs;
 	}
 
 	private void CheckParams(List<Vector3> points, float smoothingFactor) {
